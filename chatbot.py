@@ -23,6 +23,7 @@ class Chatbot:
       self.name = 'moviebot'
       self.is_turbo = is_turbo
       self.read_data()
+      self.movies_count = 0
 
     #############################################################################
     # 1. WARM UP REPL
@@ -75,7 +76,42 @@ class Chatbot:
       if self.is_turbo == True:
         response = 'processed %s in creative mode!!' % input
       else:
-        response = 'processed %s in starter mode' % input
+        quote_index = max(input.find('\''), input.find('\"'))
+        if quote_index >= 0:
+          end_index = max(input.find('\'', quote_index+1), input.find('\"', quote_index+1))
+          if end_index >= 0:
+            movie_title = input[quote_index+1 : end_index]
+            self.movies_count += 1
+            
+            sentiment = 'liked'
+            tokens = (input[:quote_index] + input[end_index+1:]).split(' ')
+            pos_count = 0.0
+            neg_count = 0.0
+
+            for t in tokens:
+              if t in self.sentiment:
+                if self.sentiment[t] == 'pos':
+                  pos_count += 1.0
+                else:
+                  neg_count += 1.0
+
+            if pos_count >= neg_count:
+              sentiment = 'liked'
+            else:
+              sentiment = 'didn\'t like'
+            response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
+          
+          else:
+            response = 'You probably forgot to close your quotation marks. Can you say the movie again?'
+        
+        else:
+          if self.movies_count < 5:
+            response = 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
+            # response = 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
+          else:
+            response = 'Ok. That\'s enough for me to make a recommendation.'
+        
+        # response = 'processed %s in starter mode' % input
 
       return response
 
