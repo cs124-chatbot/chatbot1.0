@@ -30,6 +30,7 @@ class Chatbot:
       self.is_turbo = is_turbo
       self.read_data()
       self.movies_count = 0
+      self.movie_titles = []
 
     #############################################################################
     # 1. WARM UP REPL
@@ -93,7 +94,7 @@ class Chatbot:
           quote_start = match.start(0)
           quote_end = match.end(0)
 
-          input_movie_removed = input[:quote_start].strip() + input[quote_end:].strip()
+          input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
 
           self.movies_count += 1
@@ -110,13 +111,14 @@ class Chatbot:
               else:
                 neg_count += 1.0
             elif self.porter.stem(t) in self.sentiment_stemmed:
-              if self.sentiment_stemmed[t] == 'pos':
+              if self.sentiment_stemmed[self.porter.stem(t)] == 'pos':
                 pos_count += 1.0
               else:
                 neg_count += 1.0
 
           if pos_count >= neg_count:
             sentiment = 'liked'
+            
           else:
             sentiment = 'didn\'t like'
           response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
@@ -175,6 +177,9 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, self.ratings = ratings()
+      self.movie_titles = set(xx for [xx , genre] in self.titles)
+      print(self.movie_titles)
+      
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
       self.sentiment_stemmed = dict()
