@@ -18,6 +18,15 @@ from PorterStemmer import PorterStemmer
 
 QUOTATION_REGEX = r'\"(.*?)\"'
 
+'''
+TODO: Feb 22, 2018
+Sentiment:
+1) count pos and neg words
+2) if prev_word in [not, neither, nor, n't, ...]
+   then negate curr_word
+4) only count words after 'but', 'although', 'however', ...
+'''
+
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
 
