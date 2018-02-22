@@ -8,6 +8,7 @@
 import csv
 import math
 import re
+import os
 
 import numpy as np
 
@@ -24,11 +25,11 @@ class Chatbot:
     # `moviebot` is the default chatbot. Change it to your chatbot's name       #
     #############################################################################
     def __init__(self, is_turbo=False):
+      self.porter = PorterStemmer()
       self.name = 'moviebot'
       self.is_turbo = is_turbo
       self.read_data()
       self.movies_count = 0
-      self.porter = PorterStemmer()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -92,9 +93,36 @@ class Chatbot:
           quote_start = match.start(0)
           quote_end = match.end(0)
 
-          print(input[quote_start:quote_end])
-          movie_removed = input[:quote_start] + input[quote_end:]
-          print(movie_removed)
+          input_movie_removed = input[:quote_start].strip() + input[quote_end:].strip()
+          movie_title = input[quote_start + 1 : quote_end - 1]
+
+          self.movies_count += 1
+          sentiment = 'liked'
+          tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+          pos_count = 0.0
+          neg_count = 0.0
+
+          for t in tokens:
+            print('stem: ' + self.porter.stem(t))
+            if t in self.sentiment:
+              if self.sentiment[t] == 'pos':
+                pos_count += 1.0
+              else:
+                neg_count += 1.0
+            # elif self.porter.stem(t) in self.sentiment_stemmed:
+            #   if self.sentiment_stemmed[t] == 'pos':
+            #     pos_count += 1.0
+            #   else:
+            #     neg_count += 1.0
+
+          if pos_count >= neg_count:
+            sentiment = 'liked'
+          else:
+            sentiment = 'didn\'t like'
+          response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
+
+
+
 
         # quote_index = max(input.find('\''), input.find('\"'))
         # if quote_index >= 0:
@@ -149,6 +177,23 @@ class Chatbot:
       self.titles, self.ratings = ratings()
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
+      self.sentiment_stemmed = dict()
+
+      subdirs = os.listdir('./deps')
+      print(subdirs)
+      if 'sentiment_stemmed.txt' in subdirs:
+        print('Already stemmed...')
+        self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
+      else:
+        print('Stemming sentiment lexicon.')
+        of = open('./deps/sentiment_stemmed.txt', 'w')
+        for k,v in self.sentiment.iteritems():
+          k_stem = self.porter.stem(k)
+          self.sentiment_stemmed[k_stem] = v
+          line = '%s,%s' % (k_stem, v)
+          of.write(line)
+          of.write('\n')
+        of.close()    
 
 
     def binarize(self):
