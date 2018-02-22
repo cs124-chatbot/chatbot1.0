@@ -109,11 +109,11 @@ class Chatbot:
                 pos_count += 1.0
               else:
                 neg_count += 1.0
-            # elif self.porter.stem(t) in self.sentiment_stemmed:
-            #   if self.sentiment_stemmed[t] == 'pos':
-            #     pos_count += 1.0
-            #   else:
-            #     neg_count += 1.0
+            elif self.porter.stem(t) in self.sentiment_stemmed:
+              if self.sentiment_stemmed[t] == 'pos':
+                pos_count += 1.0
+              else:
+                neg_count += 1.0
 
           if pos_count >= neg_count:
             sentiment = 'liked'
@@ -180,7 +180,6 @@ class Chatbot:
       self.sentiment_stemmed = dict()
 
       subdirs = os.listdir('./deps')
-      print(subdirs)
       if 'sentiment_stemmed.txt' in subdirs:
         print('Already stemmed...')
         self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
