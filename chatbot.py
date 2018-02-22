@@ -92,7 +92,9 @@ class Chatbot:
           quote_start = match.start(0)
           quote_end = match.end(0)
 
-          print(quote_start, quote_end)
+          print(input[quote_start:quote_end])
+          movie_removed = input[:quote_start] + input[quote_end:]
+          print(movie_removed)
 
         # quote_index = max(input.find('\''), input.find('\"'))
         # if quote_index >= 0:
@@ -130,7 +132,7 @@ class Chatbot:
         #   else:
         #     response = 'Ok. That\'s enough for me to make a recommendation.'
         
-        response = 'processed %s in starter mode' % input
+        # response = 'processed %s in starter mode' % input
 
       return response
 
