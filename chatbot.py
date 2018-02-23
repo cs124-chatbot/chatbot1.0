@@ -124,8 +124,7 @@ class Chatbot:
           self.movies_count += 1
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-          # pos_count = 0.0
-          # neg_count = 0.0
+          sentiment_counter = 0
           
 
           prev_word = ''
@@ -142,30 +141,28 @@ class Chatbot:
               print('stem: ' + t_stem)
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
-                  pos_count += 1.0
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
                 else:
-                  neg_count += 1.0
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
               elif t_stem in self.sentiment_stemmed:
                 if self.sentiment_stemmed[t_stem] == 'pos':
-                  pos_count += 1.0
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
                 else:
-                  neg_count += 1.0
+                  if negation_flag:
+                    sentiment_counter == 1
+                  else:
+                    sentiment_counter -= 1
 
-
-            # t_stem = self.porter.stem(t)
-            # print('stem: ' + t_stem)
-            # if t in self.sentiment:
-            #   if self.sentiment[t] == 'pos':
-            #     pos_count += 1.0
-            #   else:
-            #     neg_count += 1.0
-            # elif t_stem in self.sentiment_stemmed:
-            #   if self.sentiment_stemmed[t_stem] == 'pos':
-            #     pos_count += 1.0
-            #   else:
-            #     neg_count += 1.0
-
-          if pos_count >= neg_count:
+          if sentiment_counter > 0:
             sentiment = 'liked'
           else:
             sentiment = 'didn\'t like'
@@ -191,10 +188,10 @@ class Chatbot:
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
 
-      reader = csv.reader(open('deps/negation.txt', 'rb'))
+      reader = open('deps/negation.txt', 'rb')
       self.negation_lexicon = set(reader)
-
       print self.negation_lexicon
+      print('wouldn\'t' in self.negation_lexicon)
 
       self.sentiment_stemmed = dict()
       subdirs = os.listdir('deps')
