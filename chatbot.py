@@ -40,6 +40,7 @@ class Chatbot:
       self.name = 'Movie Bot'
       self.is_turbo = is_turbo
       self.read_data()
+      self.binarize()
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
       self.movies_count = 0
 
@@ -226,8 +227,26 @@ class Chatbot:
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
+      upper_threshold = 3.1
+      lower_threshold = 2.9
+      #print self.ratings
+      num_rows = len(self.ratings)
+      num_cols = len(self.ratings[0])
 
-      pass
+      self.bin_ratings = np.zeros((num_rows, num_cols))
+      # print self.bin_ratings
+      for row in xrange(num_rows):
+        for col in xrange(num_cols):
+          raw_rating = self.ratings[row][col]
+          rating = 0
+          if raw_rating >= upper_threshold:
+            rating = 1
+          elif raw_rating <= lower_threshold and raw_rating > 0: 
+            rating = -1
+          else:
+             rating = 0
+          self.bin_ratings[row][col] = rating
+      print self.bin_ratings
 
 
     def distance(self, u, v):
