@@ -9,6 +9,7 @@ import csv
 import math
 import re
 import os
+import random
 
 import numpy as np
 
@@ -35,11 +36,11 @@ class Chatbot:
     #############################################################################
     def __init__(self, is_turbo=False):
       self.porter = PorterStemmer()
-      self.name = 'moviebot'
+      self.movie_titles = []
+      self.name = 'Movie Bot'
       self.is_turbo = is_turbo
       self.read_data()
       self.movies_count = 0
-      self.movie_titles = []
 
     #############################################################################
     # 1. WARM UP REPL
@@ -51,7 +52,7 @@ class Chatbot:
       # TODO: Write a short greeting message                                      #
       #############################################################################
 
-      greeting_message = 'How can I help you?'
+      greeting_message = 'The name\'s Bot. Movie Bot. I\'m here to give you recommendations on what movies to watch. So go ahead, tell me about a movie that you\'ve seen.'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -92,13 +93,22 @@ class Chatbot:
       if self.is_turbo == True:
         response = 'processed %s in creative mode!!' % input
       else:
-        movie_titles = re.findall(QUOTATION_REGEX, input)
+        movies_mentioned = re.findall(QUOTATION_REGEX, input)
         
-        if len(movie_titles) == 0:
-          response = 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
-        elif len(movie_titles) > 1:
+        if len(movies_mentioned) == 0:
+            if self.movies_count < 5:
+              possible_responses = [
+                'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+                'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
+              ]
+
+              response = possible_responses[random.randint(0, len(possible_responses) - 1)]
+            else:
+              response = 'Ok. That\'s enough for me to make a recommendation.'
+        elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
         else:
+          # Search for movie title in quotes
           match = re.search(QUOTATION_REGEX, input)
           quote_start = match.start(0)
           quote_end = match.end(0)
@@ -106,70 +116,43 @@ class Chatbot:
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
 
+          # if movie_title in self.movie_titles:
+          #   print('movie found')
+          # else:
+          #   print('movie not found')
+
           self.movies_count += 1
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
           pos_count = 0.0
           neg_count = 0.0
 
+          prev_word = ''
+          curr_word = ''
           for t in tokens:
-            print('stem: ' + self.porter.stem(t))
+            prev_word = curr_word
+            curr_word = t
+            if prev_word == 'not' or prev_word == 'never' or prev_word.find('n\'t') != -1:
+              print("negation switch on: " + prev_word) 
+
+            t_stem = self.porter.stem(t)
+            print('stem: ' + t_stem)
             if t in self.sentiment:
               if self.sentiment[t] == 'pos':
                 pos_count += 1.0
               else:
                 neg_count += 1.0
-            elif self.porter.stem(t) in self.sentiment_stemmed:
-              if self.sentiment_stemmed[self.porter.stem(t)] == 'pos':
+            elif t_stem in self.sentiment_stemmed:
+              if self.sentiment_stemmed[t_stem] == 'pos':
                 pos_count += 1.0
               else:
                 neg_count += 1.0
 
           if pos_count >= neg_count:
             sentiment = 'liked'
-            
           else:
             sentiment = 'didn\'t like'
           response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
-
-
-
-
-        # quote_index = max(input.find('\''), input.find('\"'))
-        # if quote_index >= 0:
-        #   end_index = max(input.find('\'', quote_index+1), input.find('\"', quote_index+1))
-        #   if end_index >= 0:
-        #     movie_title = input[quote_index+1 : end_index]
-        #     self.movies_count += 1
-            
-        #     sentiment = 'liked'
-        #     tokens = (input[:quote_index] + input[end_index+1:]).split(' ') #remove movie title before tokenizing
-        #     pos_count = 0.0
-        #     neg_count = 0.0
-
-        #     for t in tokens:
-        #       print('stem: ' + self.porter.stem(t))
-        #       if t in self.sentiment:
-        #         if self.sentiment[t] == 'pos':
-        #           pos_count += 1.0
-        #         else:
-        #           neg_count += 1.0
-
-        #     if pos_count >= neg_count:
-        #       sentiment = 'liked'
-        #     else:
-        #       sentiment = 'didn\'t like'
-        #     response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
-          
-        #   else:
-        #     response = 'You probably forgot to close your quotation marks. Can you say the movie again?'
-        
-        # else:
-        #   if self.movies_count < 5:
-        #     response = 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
-        #     # response = 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
-        #   else:
-        #     response = 'Ok. That\'s enough for me to make a recommendation.'
         
         # response = 'processed %s in starter mode' % input
 
@@ -187,7 +170,6 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = set(xx for [xx , genre] in self.titles)
-      print(self.movie_titles)
       
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
@@ -195,7 +177,7 @@ class Chatbot:
 
       subdirs = os.listdir('./deps')
       if 'sentiment_stemmed.txt' in subdirs:
-        print('Already stemmed...')
+        print('Sentiment lexicon already stemmed...')
         self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
       else:
         print('Stemming sentiment lexicon.')
