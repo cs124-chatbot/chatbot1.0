@@ -40,6 +40,7 @@ class Chatbot:
       self.name = 'Movie Bot'
       self.is_turbo = is_turbo
       self.read_data()
+      self.negation_lexicon = set(self.readFile('deps/negation.txt'))
       self.movies_count = 0
 
     #############################################################################
@@ -78,6 +79,24 @@ class Chatbot:
     #############################################################################
     # 2. Modules 2 and 3: extraction and transformation                         #
     #############################################################################
+    def readFile(self, fileName):
+      """
+       * Code for reading a file.  you probably don't want to modify anything here,
+       * unless you don't like the way we segment files.
+      """
+      contents = []
+      f = open(fileName)
+      for line in f:
+        contents.append(line)
+      f.close()
+      result = self.segmentWords('\n'.join(contents))
+      return result
+
+    def segmentWords(self, s):
+      """
+       * Splits lines on whitespace for file reading
+      """
+      return s.split()
 
     def process(self, input):
       """Takes the input string from the REPL and call delegated functions
@@ -94,7 +113,7 @@ class Chatbot:
         response = 'processed %s in creative mode!!' % input
       else:
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
-        
+
         if len(movies_mentioned) == 0:
             if self.movies_count < 5:
               possible_responses = [
@@ -124,8 +143,14 @@ class Chatbot:
           self.movies_count += 1
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+<<<<<<< HEAD
           sentiment_counter = 0
           
+=======
+          # pos_count = 0.0
+          # neg_count = 0.0
+
+>>>>>>> ccc5b5c258f4486f016c4f15bfbeb12a7365f196
 
           prev_word = ''
           curr_word = ''
@@ -134,7 +159,7 @@ class Chatbot:
             prev_word = curr_word
             curr_word = t
             if prev_word == 'not' or prev_word == 'never' or prev_word.find('n\'t') != -1:
-              print("negation switch on: " + prev_word) 
+              print("negation switch on: " + prev_word)
               negation_flag = True
 
               t_stem = self.porter.stem(t)
@@ -167,7 +192,7 @@ class Chatbot:
           else:
             sentiment = 'didn\'t like'
           response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
-        
+
         # response = 'processed %s in starter mode' % input
 
       return response
@@ -184,12 +209,15 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = set(xx for [xx , genre] in self.titles)
-      
+
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
 
+<<<<<<< HEAD
       reader = open('deps/negation.txt', 'rb')
       self.negation_lexicon = set(reader)
+=======
+>>>>>>> ccc5b5c258f4486f016c4f15bfbeb12a7365f196
       print self.negation_lexicon
       print('wouldn\'t' in self.negation_lexicon)
 
@@ -207,7 +235,7 @@ class Chatbot:
           line = '%s,%s' % (k_stem, v)
           of.write(line)
           of.write('\n')
-        of.close()    
+        of.close()
 
 
     def binarize(self):
