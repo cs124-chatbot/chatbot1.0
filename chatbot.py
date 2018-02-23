@@ -226,7 +226,8 @@ class Chatbot:
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
-
+      threshold = 3
+      print self.ratings 
       pass
 
 
