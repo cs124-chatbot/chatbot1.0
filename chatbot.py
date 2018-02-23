@@ -156,32 +156,32 @@ class Chatbot:
               print("negation switch on: " + prev_word)
               negation_flag = True
 
-              t_stem = self.porter.stem(t)
-              print('stem: ' + t_stem)
-              if t in self.sentiment:
-                if self.sentiment[t] == 'pos':
-                  if negation_flag:
-                    sentiment_counter -= 1
-                  else:
-                    sentiment_counter += 1
+            t_stem = self.porter.stem(t)
+            print('stem: ' + t_stem)
+            if t in self.sentiment:
+              if self.sentiment[t] == 'pos':
+                if negation_flag:
+                  sentiment_counter -= 1
                 else:
-                  if negation_flag:
-                    sentiment_counter += 1
-                  else:
-                    sentiment_counter -= 1
-              elif t_stem in self.sentiment_stemmed:
-                if self.sentiment_stemmed[t_stem] == 'pos':
-                  if negation_flag:
-                    sentiment_counter -= 1
-                  else:
-                    sentiment_counter += 1
+                  sentiment_counter += 1
+              else:
+                if negation_flag:
+                  sentiment_counter += 1
                 else:
-                  if negation_flag:
-                    sentiment_counter == 1
-                  else:
-                    sentiment_counter -= 1
+                  sentiment_counter -= 1
+            elif t_stem in self.sentiment_stemmed:
+              if self.sentiment_stemmed[t_stem] == 'pos':
+                if negation_flag:
+                  sentiment_counter -= 1
+                else:
+                  sentiment_counter += 1
+              else:
+                if negation_flag:
+                  sentiment_counter += 1
+                else:
+                  sentiment_counter -= 1
 
-          if sentiment_counter > 0:
+          if sentiment_counter >= 0:
             sentiment = 'liked'
           else:
             sentiment = 'didn\'t like'
