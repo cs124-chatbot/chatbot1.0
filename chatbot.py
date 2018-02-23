@@ -87,7 +87,7 @@ class Chatbot:
       contents = []
       f = open(fileName)
       for line in f:
-        contents.append(line)
+        contents.append(line.decode('utf-8'))
       f.close()
       result = self.segmentWords('\n'.join(contents))
       return result
@@ -143,14 +143,8 @@ class Chatbot:
           self.movies_count += 1
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-<<<<<<< HEAD
           sentiment_counter = 0
           
-=======
-          # pos_count = 0.0
-          # neg_count = 0.0
-
->>>>>>> ccc5b5c258f4486f016c4f15bfbeb12a7365f196
 
           prev_word = ''
           curr_word = ''
@@ -158,7 +152,7 @@ class Chatbot:
           for t in tokens:
             prev_word = curr_word
             curr_word = t
-            if prev_word == 'not' or prev_word == 'never' or prev_word.find('n\'t') != -1:
+            if prev_word in self.negation_lexicon:
               print("negation switch on: " + prev_word)
               negation_flag = True
 
@@ -212,14 +206,6 @@ class Chatbot:
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
-
-<<<<<<< HEAD
-      reader = open('deps/negation.txt', 'rb')
-      self.negation_lexicon = set(reader)
-=======
->>>>>>> ccc5b5c258f4486f016c4f15bfbeb12a7365f196
-      print self.negation_lexicon
-      print('wouldn\'t' in self.negation_lexicon)
 
       self.sentiment_stemmed = dict()
       subdirs = os.listdir('deps')
