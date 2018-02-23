@@ -135,10 +135,10 @@ class Chatbot:
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
 
-          # if movie_title in self.movie_titles:
-          #   print('movie found')
-          # else:
-          #   print('movie not found')
+          if movie_title in self.movie_titles:
+            print('movie found')
+          else:
+            print('movie not found')
 
           self.movies_count += 1
           sentiment = 'liked'
@@ -180,7 +180,7 @@ class Chatbot:
                   sentiment_counter += 1
                 else:
                   sentiment_counter -= 1
-
+          print(sentiment_counter)
           if sentiment_counter >= 0:
             sentiment = 'liked'
           else:
