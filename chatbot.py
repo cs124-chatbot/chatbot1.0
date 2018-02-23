@@ -124,29 +124,46 @@ class Chatbot:
           self.movies_count += 1
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-          pos_count = 0.0
-          neg_count = 0.0
+          # pos_count = 0.0
+          # neg_count = 0.0
+          
 
           prev_word = ''
           curr_word = ''
+          negation_flag = False
           for t in tokens:
             prev_word = curr_word
             curr_word = t
             if prev_word == 'not' or prev_word == 'never' or prev_word.find('n\'t') != -1:
               print("negation switch on: " + prev_word) 
+              negation_flag = True
 
-            t_stem = self.porter.stem(t)
-            print('stem: ' + t_stem)
-            if t in self.sentiment:
-              if self.sentiment[t] == 'pos':
-                pos_count += 1.0
-              else:
-                neg_count += 1.0
-            elif t_stem in self.sentiment_stemmed:
-              if self.sentiment_stemmed[t_stem] == 'pos':
-                pos_count += 1.0
-              else:
-                neg_count += 1.0
+              t_stem = self.porter.stem(t)
+              print('stem: ' + t_stem)
+              if t in self.sentiment:
+                if self.sentiment[t] == 'pos':
+                  pos_count += 1.0
+                else:
+                  neg_count += 1.0
+              elif t_stem in self.sentiment_stemmed:
+                if self.sentiment_stemmed[t_stem] == 'pos':
+                  pos_count += 1.0
+                else:
+                  neg_count += 1.0
+
+
+            # t_stem = self.porter.stem(t)
+            # print('stem: ' + t_stem)
+            # if t in self.sentiment:
+            #   if self.sentiment[t] == 'pos':
+            #     pos_count += 1.0
+            #   else:
+            #     neg_count += 1.0
+            # elif t_stem in self.sentiment_stemmed:
+            #   if self.sentiment_stemmed[t_stem] == 'pos':
+            #     pos_count += 1.0
+            #   else:
+            #     neg_count += 1.0
 
           if pos_count >= neg_count:
             sentiment = 'liked'
@@ -173,15 +190,20 @@ class Chatbot:
       
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
-      self.sentiment_stemmed = dict()
 
-      subdirs = os.listdir('./deps')
+      reader = csv.reader(open('deps/negation.txt', 'rb'))
+      self.negation_lexicon = set(reader)
+
+      print self.negation_lexicon
+
+      self.sentiment_stemmed = dict()
+      subdirs = os.listdir('deps')
       if 'sentiment_stemmed.txt' in subdirs:
         print('Sentiment lexicon already stemmed...')
         self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
       else:
         print('Stemming sentiment lexicon.')
-        of = open('./deps/sentiment_stemmed.txt', 'w')
+        of = open('deps/sentiment_stemmed.txt', 'w')
         for k,v in self.sentiment.iteritems():
           k_stem = self.porter.stem(k)
           self.sentiment_stemmed[k_stem] = v
