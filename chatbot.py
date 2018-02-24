@@ -43,6 +43,7 @@ class Chatbot:
       self.binarize()
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
       self.movies_count = 0
+      self.movie_inputs = {}
 
     #############################################################################
     # 1. WARM UP REPL
@@ -124,7 +125,16 @@ class Chatbot:
 
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
-              response = 'Ok. That\'s enough for me to make a recommendation.'
+              response = 'Ok. That\'s enough for me to make a recommendation.' 
+              print self.movie_inputs
+              preference_vec = []
+              for title in self.movie_titles:
+                if title in self.movie_inputs:
+                  preference_vec.append(movie_inputs[title])
+                else:
+                  preference_vec.append(0)
+              print preference_vec
+
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
         else:
@@ -135,58 +145,65 @@ class Chatbot:
 
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
+          
 
           if movie_title in self.movie_titles:
             print('movie found')
+
+            self.movies_count += 1
+            sentiment = 'liked'
+            tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+            sentiment_counter = 0
+            prev_word = ''
+            curr_word = ''
+            negation_flag = False
+            for t in tokens:
+              prev_word = curr_word
+              curr_word = t
+              if prev_word in self.negation_lexicon:
+                print("negation switch on: " + prev_word)
+                negation_flag = True
+
+              t_stem = self.porter.stem(t)
+              print('stem: ' + t_stem)
+              if t in self.sentiment:
+                if self.sentiment[t] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+              elif t_stem in self.sentiment_stemmed:
+                if self.sentiment_stemmed[t_stem] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+            print(sentiment_counter)
+            if sentiment_counter >= 0:
+              sentiment = 'liked'
+            else:
+              sentiment = 'didn\'t like'
+            response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
+            
+            if sentiment_counter == 0: 
+              self.movie_inputs[movie_title] = 1
+            else:
+              self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
+
           else:
             print('movie not found')
+            response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
-          self.movies_count += 1
-          sentiment = 'liked'
-          tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-          sentiment_counter = 0
-          
-
-          prev_word = ''
-          curr_word = ''
-          negation_flag = False
-          for t in tokens:
-            prev_word = curr_word
-            curr_word = t
-            if prev_word in self.negation_lexicon:
-              print("negation switch on: " + prev_word)
-              negation_flag = True
-
-            t_stem = self.porter.stem(t)
-            print('stem: ' + t_stem)
-            if t in self.sentiment:
-              if self.sentiment[t] == 'pos':
-                if negation_flag:
-                  sentiment_counter -= 1
-                else:
-                  sentiment_counter += 1
-              else:
-                if negation_flag:
-                  sentiment_counter += 1
-                else:
-                  sentiment_counter -= 1
-            elif t_stem in self.sentiment_stemmed:
-              if self.sentiment_stemmed[t_stem] == 'pos':
-                if negation_flag:
-                  sentiment_counter -= 1
-                else:
-                  sentiment_counter += 1
-              else:
-                if negation_flag:
-                  sentiment_counter += 1
-                else:
-                  sentiment_counter -= 1
-          print(sentiment_counter)
-          if sentiment_counter >= 0:
-            sentiment = 'liked'
-          else:
-            sentiment = 'didn\'t like'
-          response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
 
         # response = 'processed %s in starter mode' % input
 
