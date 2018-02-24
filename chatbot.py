@@ -229,12 +229,10 @@ class Chatbot:
       """Modifies the ratings matrix to make all of the ratings binary"""
       upper_threshold = 3.1
       lower_threshold = 2.9
-      #print self.ratings
       num_rows = len(self.ratings)
       num_cols = len(self.ratings[0])
 
       self.bin_ratings = np.zeros((num_rows, num_cols))
-      # print self.bin_ratings
       for row in xrange(num_rows):
         for col in xrange(num_cols):
           raw_rating = self.ratings[row][col]
@@ -246,14 +244,14 @@ class Chatbot:
           else:
              rating = 0
           self.bin_ratings[row][col] = rating
-      print self.bin_ratings
+      #print self.bin_ratings
 
 
     def distance(self, u, v):
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-
+      
       pass
 
 
