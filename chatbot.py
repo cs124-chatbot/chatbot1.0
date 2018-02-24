@@ -251,8 +251,12 @@ class Chatbot:
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-      
-      pass
+      # Cosine similarity 
+      len_u = len(u)
+      len_v = len(v)
+      dot_prod = numpy.dot(u,v)
+      cos = float(dot_prod) /(len_u * len_v)
+      return cos
 
 
     def recommend(self, u):
