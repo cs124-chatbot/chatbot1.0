@@ -127,7 +127,7 @@ class Chatbot:
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
               response = 'Ok. That\'s enough for me to make a recommendation.' 
-              print self.movie_inputs
+              #print self.movie_inputs
               preference_vec = []
               for title in self.movie_titles:
                 if title in self.movie_inputs:
@@ -164,11 +164,11 @@ class Chatbot:
               prev_word = curr_word
               curr_word = t
               if prev_word in self.negation_lexicon:
-                print("negation switch on: " + prev_word)
+                #print("negation switch on: " + prev_word)
                 negation_flag = True
 
               t_stem = self.porter.stem(t)
-              print('stem: ' + t_stem)
+              #print('stem: ' + t_stem)
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
