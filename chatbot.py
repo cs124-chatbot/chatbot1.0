@@ -12,6 +12,7 @@ import os
 import random
 
 import numpy as np
+from scipy import spatial
 
 from movielens import ratings
 from random import randint
@@ -130,10 +131,12 @@ class Chatbot:
               preference_vec = []
               for title in self.movie_titles:
                 if title in self.movie_inputs:
-                  preference_vec.append(movie_inputs[title])
+                  preference_vec.append(self.movie_inputs[title])
                 else:
                   preference_vec.append(0)
-              print preference_vec
+              # print preference_vec
+              recommended_movie = self.recommend(preference_vec)
+              response = ("I suggest you watch \"%s.\"") % (recommended_movie)
 
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
@@ -220,7 +223,7 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, self.ratings = ratings()
-      self.movie_titles = set(xx for [xx , genre] in self.titles)
+      self.movie_titles = [xx for [xx , genre] in self.titles]
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
@@ -268,12 +271,14 @@ class Chatbot:
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
+
       # Cosine similarity 
-      len_u = len(u)
-      len_v = len(v)
-      dot_prod = numpy.dot(u,v)
-      cos = float(dot_prod) /(len_u * len_v)
-      return cos
+      return spatial.distance.cosine(u,v)
+      # mag_u = np.linalg.norm(u)
+      # mag_v = np.linalg.norm(v)
+      # dot_prod = np.dot(u,v)
+      # cos = float(dot_prod) /(mag_u * mag_v)
+      # return cos
 
 
     def recommend(self, u):
@@ -282,7 +287,27 @@ class Chatbot:
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
 
-      pass
+      max_rate = 0
+      suggestion = ''
+      i = 0
+      for movie_vec in self.bin_ratings:
+        predicted_rating = 0
+
+        for title, rating in self.movie_inputs.iteritems():
+          index = self.movie_titles.index(title)
+          rating_vec = self.bin_ratings[index]
+
+          similarity = self.distance(rating_vec, movie_vec)
+          if similarity >= 0:
+            predicted_rating += (rating * similarity)
+          
+        if predicted_rating > max_rate:        
+          max_rate = predicted_rating
+          suggestion = self.movie_titles[i]
+        i += 1
+      
+      return suggestion
+      
 
 
     #############################################################################
