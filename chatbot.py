@@ -141,7 +141,7 @@ class Chatbot:
                   preference_vec.append(0)
               #print preference_vec
               recommended_movie = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"") % (response, recommended_movie)
+              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (response, recommended_movie)
 
         # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
