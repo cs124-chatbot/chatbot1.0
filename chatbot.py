@@ -273,7 +273,6 @@ class Chatbot:
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-
       # Cosine similarity 
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
@@ -287,7 +286,7 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-
+      recommendations = []
       max_rate = 0
       suggestion = ''
       for i, movie_vec in enumerate(self.bin_ratings):
@@ -297,10 +296,15 @@ class Chatbot:
           index = self.movie_titles.index(title)
           rating_vec = self.bin_ratings[index]
 
+          if i == index:
+            print title
+
           similarity = self.distance(rating_vec, movie_vec)
           if similarity >= 0:
             predicted_rating += (rating * similarity)
           
+          recommendations.append(predicted_rating)
+
         if predicted_rating > max_rate:        
           max_rate = predicted_rating
           suggestion = self.movie_titles[i]
