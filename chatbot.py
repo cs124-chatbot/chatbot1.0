@@ -12,7 +12,6 @@ import os
 import random
 
 import numpy as np
-from scipy import spatial
 
 from movielens import ratings
 from random import randint
