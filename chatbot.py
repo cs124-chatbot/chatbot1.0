@@ -141,7 +141,7 @@ class Chatbot:
                   preference_vec.append(0)
               #print preference_vec
               recommended_movie = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (response, recommended_movie)
+              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (response, recommended_movie[0])
 
         # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
@@ -288,8 +288,7 @@ class Chatbot:
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
 
-      max_rate = 0
-      suggestion = ''
+      suggestions = []
       for i, movie_vec in enumerate(self.bin_ratings):
         predicted_rating = 0
 
@@ -301,11 +300,14 @@ class Chatbot:
           if similarity >= 0:
             predicted_rating += (rating * similarity)
           
-        if predicted_rating > max_rate:        
-          max_rate = predicted_rating
-          suggestion = self.movie_titles[i]
-      
-      return suggestion
+        if len(suggestions) < 10:
+          suggestions.append(self.movie_titles[i]) 
+          suggestions = sort(suggestions)
+        elif predicted_rating > suggestions[9]:
+          suggestions[9] = self.movie_titles[i]
+          suggestions = sort(suggestions)
+ 
+      return suggestions
       
 
 
