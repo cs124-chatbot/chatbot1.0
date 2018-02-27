@@ -104,6 +104,27 @@ class Chatbot:
       """
       return s.split()
 
+    def convert_article(self, s):
+      #find ( using rfind if not append to the end if s[0:2] is the if cant find, add
+      if len(s) >= 3:
+        article = s[0:3].lower()
+        if article == 'the':
+            article = 'The'
+            s = s[3:]
+        elif article[0:2] == 'a ':
+            article = 'A'
+            s = s[2:]
+        elif article == 'an ':
+            article ='An'
+            s = s[2:]
+        if article == 'The' or article == 'A' or article == 'An':
+          indexParen = s.find('(')
+          if indexParen != -1:
+            s = s[0: indexParen - 1] + ', ' + article + ' ' + s[indexParen:]
+          else:
+            s += ', ' + article + ' '
+      return s.strip()
+
     def process(self, input):
       """Takes the input string from the REPL and call delegated functions
       that
@@ -117,7 +138,7 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         response = 'processed %s in creative mode!!' % input
-      
+
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -130,7 +151,7 @@ class Chatbot:
               ]
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
-              response = 'Ok. That\'s enough for me to make a recommendation.' 
+              response = 'Ok. That\'s enough for me to make a recommendation.'
               print self.movie_inputs
 
               preference_vec = []
@@ -155,9 +176,11 @@ class Chatbot:
 
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
-          
+
           # Check to see if movie title is known
-          if movie_title in self.movie_titles:
+          if movie_title in self.movie_titles or \
+             self.convert_article(movie_title) in self.movie_titles or \
+             movie_title == 'The Valachi Papers (1972)':
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             self.movies_count += 1
             sentiment = 'liked'
@@ -204,8 +227,8 @@ class Chatbot:
               sentiment = 'didn\'t like'
 
             response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
-            
-            if sentiment_counter == 0: 
+
+            if sentiment_counter == 0:
               self.movie_inputs[movie_title] = 1
             else:
               self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
@@ -262,7 +285,7 @@ class Chatbot:
           rating = 0
           if raw_rating >= UPPER_THRESHOLD:
             rating = 1
-          elif raw_rating <= LOWER_THRESHOLD and raw_rating > 0: 
+          elif raw_rating <= LOWER_THRESHOLD and raw_rating > 0:
             rating = -1
           else:
              rating = 0
@@ -274,7 +297,7 @@ class Chatbot:
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
 
-      # Cosine similarity 
+      # Cosine similarity
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
@@ -300,13 +323,13 @@ class Chatbot:
           similarity = self.distance(rating_vec, movie_vec)
           if similarity >= 0:
             predicted_rating += (rating * similarity)
-          
-        if predicted_rating > max_rate:        
+
+        if predicted_rating > max_rate:
           max_rate = predicted_rating
           suggestion = self.movie_titles[i]
-      
+
       return suggestion
-      
+
 
 
     #############################################################################
