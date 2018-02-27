@@ -19,6 +19,10 @@ from random import randint
 from PorterStemmer import PorterStemmer
 
 QUOTATION_REGEX = r'\"(.*?)\"'
+MIN_NUM_MOVIES_NEEDED = 5
+# Binarize Constants
+UPPER_THRESHOLD = 3.1
+LOWER_THRESHOLD = 2.9
 
 '''
 TODO: Feb 22, 2018
@@ -118,7 +122,7 @@ class Chatbot:
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
 
         if len(movies_mentioned) == 0:
-            if self.movies_count < 5:
+            if self.movies_count < MIN_NUM_MOVIES_NEEDED:
               possible_responses = [
                 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
                 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
@@ -140,6 +144,7 @@ class Chatbot:
 
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
+
         else:
           # Search for movie title in quotes
           match = re.search(QUOTATION_REGEX, input)
@@ -149,26 +154,27 @@ class Chatbot:
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
           
-
+          # Check to see if movie title is known
           if movie_title in self.movie_titles:
             print('movie found')
+            tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
 
             self.movies_count += 1
             sentiment = 'liked'
-            tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             sentiment_counter = 0
             prev_word = ''
             curr_word = ''
             negation_flag = False
+
             for t in tokens:
               prev_word = curr_word
+
               curr_word = t
               if prev_word in self.negation_lexicon:
-                #print("negation switch on: " + prev_word)
                 negation_flag = True
 
               t_stem = self.porter.stem(t)
-              #print('stem: ' + t_stem)
+
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -180,6 +186,7 @@ class Chatbot:
                     sentiment_counter += 1
                   else:
                     sentiment_counter -= 1
+
               elif t_stem in self.sentiment_stemmed:
                 if self.sentiment_stemmed[t_stem] == 'pos':
                   if negation_flag:
@@ -192,10 +199,12 @@ class Chatbot:
                   else:
                     sentiment_counter -= 1
             print(sentiment_counter)
+
             if sentiment_counter >= 0:
               sentiment = 'liked'
             else:
               sentiment = 'didn\'t like'
+
             response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
             
             if sentiment_counter == 0: 
@@ -204,9 +213,7 @@ class Chatbot:
               self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
 
           else:
-            print('movie not found')
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
-
 
         # response = 'processed %s in starter mode' % input
 
@@ -247,8 +254,6 @@ class Chatbot:
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
-      upper_threshold = 3.1
-      lower_threshold = 2.9
       num_rows = len(self.ratings)
       num_cols = len(self.ratings[0])
 
@@ -257,15 +262,13 @@ class Chatbot:
         for col in xrange(num_cols):
           raw_rating = self.ratings[row][col]
           rating = 0
-          if raw_rating >= upper_threshold:
+          if raw_rating >= UPPER_THRESHOLD:
             rating = 1
-          elif raw_rating <= lower_threshold and raw_rating > 0: 
+          elif raw_rating <= LOWER_THRESHOLD and raw_rating > 0: 
             rating = -1
           else:
              rating = 0
           self.bin_ratings[row][col] = rating
-      # print(self.bin_ratings.shape)
-      #print self.bin_ratings
 
 
     def distance(self, u, v):
