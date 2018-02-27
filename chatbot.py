@@ -131,7 +131,7 @@ class Chatbot:
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
               response = 'Ok. That\'s enough for me to make a recommendation.' 
-              print self.movie_inputs
+              #print self.movie_inputs
 
               preference_vec = []
               for title in self.movie_titles:
@@ -139,9 +139,9 @@ class Chatbot:
                   preference_vec.append(self.movie_inputs[title])
                 else:
                   preference_vec.append(0)
-              print preference_vec
+              #print preference_vec
               recommended_movie = self.recommend(preference_vec)
-              response = ("I suggest you watch \"%s.\"") % (recommended_movie)
+              response = ("%s\nI suggest you watch \"%s.\"") % (response, recommended_movie)
 
         # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
