@@ -107,6 +107,21 @@ class Chatbot:
       """
       return s.split()
 
+    def reverse_convert_article(self, raw_title):
+      readable_title = raw_title
+      if raw_title == "Valachi Papers,The (1972)":
+        return "The Valachi Papers (1972)"
+      indexParen = raw_title.find('(')
+      if indexParen != -1:
+        commaChunk = (raw_title[:indexParen])[-6:]
+        indexComma = commaChunk.find(',')
+        if indexComma != -1:
+          article = commaChunk[indexComma + 1:].strip()
+          if article == 'The' or article == 'A' or article == 'An':
+            readable_title = article + " " + raw_title[: indexParen - (6 - indexComma)] + ' ' + raw_title[indexParen:]
+      return readable_title
+
+
     def convert_article(self, s):
       #find ( using rfind if not append to the end if s[0:2] is the if cant find, add
       if len(s) >= 3:
@@ -146,7 +161,7 @@ class Chatbot:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.recommend_flag > 0:
-          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.recommended_movies[self.recommend_flag][0])
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
           if self.recommend_flag < 9:
             self.recommend_flag += 1
         elif len(movies_mentioned) == 0:
@@ -167,7 +182,7 @@ class Chatbot:
                   preference_vec.append(0)
               #print preference_vec
               self.recommended_movies = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.recommended_movies[self.recommend_flag][0])
+              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
               self.recommend_flag = 1
 
         # More than 1 movied mentioned in the same input
@@ -183,10 +198,19 @@ class Chatbot:
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
 
+          movie_found = False
+          readable_title = movie_title
           # Check to see if movie title is known
-          if movie_title in self.movie_titles or \
-             self.convert_article(movie_title) in self.movie_titles or \
-             movie_title == 'The Valachi Papers (1972)':
+          if movie_title in self.movie_titles:
+            movie_found = True
+          elif self.convert_article(movie_title) in self.movie_titles:
+            movie_title = self.convert_article(movie_title)
+            movie_found = True
+          elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
+            movie_title = 'Valachi Papers,The (1972)'
+            movie_found = True
+
+          if movie_found:
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             self.movies_count += 1
             sentiment = 'liked'
@@ -225,14 +249,15 @@ class Chatbot:
                     sentiment_counter += 1
                   else:
                     sentiment_counter -= 1
-            # print(sentiment_counter)
-
-            if sentiment_counter >= 0:
+        
+            if sentiment_counter > 0:
               sentiment = 'liked'
-            else:
+            elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
+            else:
+              return 'Sorry, didn\'t quite get whether you liked ' + readable_title + '. Can you elaborate on what you thought of ' + movie_title + '?'
 
-            response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
+            response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
             if sentiment_counter == 0:
               self.movie_inputs[movie_title] = 1
@@ -241,8 +266,6 @@ class Chatbot:
 
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
-
-        # response = 'processed %s in starter mode' % input
 
       return response
 
@@ -316,30 +339,35 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-      count = 0
+      # count = 0
       suggestions = []
+      # loopCt = 0
       for i, movie_vec in enumerate(self.bin_ratings):
         predicted_rating = 0
-
+        if self.movie_titles[i] in self.movie_inputs:
+          continue
+        
         for title, rating in self.movie_inputs.iteritems():
           index = self.movie_titles.index(title)
           rating_vec = self.bin_ratings[index]
 
           similarity = self.distance(rating_vec, movie_vec)
-          if similarity >= 0:
+          if similarity >= 0: # solve for RuntimeError?
             predicted_rating += (rating * similarity)
-
+      
         if len(suggestions) < 10:
           suggestions.append((self.movie_titles[i], predicted_rating)) 
           suggestions = sorted(suggestions, key=itemgetter(1))
-          count += 1
+          # count += 1
         elif predicted_rating > suggestions[9][1]:
           suggestions[9] = (self.movie_titles[i], predicted_rating)
           suggestions = sorted(suggestions, key=itemgetter(1))
-          count += 1
-      print "COUNT = %s" % (count)
-      return suggestions
+          # count += 1
+        # loopCt += 1
 
+      # print 'loopCt: %s' % (loopCt)
+      # print "COUNT = %s" % (count)
+      return suggestions
 
 
     #############################################################################
