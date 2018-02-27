@@ -12,6 +12,7 @@ import os
 import random
 
 import numpy as np
+from scipy import spatial
 
 from movielens import ratings
 from random import randint
@@ -43,6 +44,7 @@ class Chatbot:
       self.binarize()
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
       self.movies_count = 0
+      self.movie_inputs = {}
 
     #############################################################################
     # 1. WARM UP REPL
@@ -124,7 +126,18 @@ class Chatbot:
 
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
-              response = 'Ok. That\'s enough for me to make a recommendation.'
+              response = 'Ok. That\'s enough for me to make a recommendation.' 
+              #print self.movie_inputs
+              preference_vec = []
+              for title in self.movie_titles:
+                if title in self.movie_inputs:
+                  preference_vec.append(self.movie_inputs[title])
+                else:
+                  preference_vec.append(0)
+              # print preference_vec
+              recommended_movie = self.recommend(preference_vec)
+              response = ("I suggest you watch \"%s.\"") % (recommended_movie)
+
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
         else:
@@ -135,58 +148,65 @@ class Chatbot:
 
           input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
+          
 
           if movie_title in self.movie_titles:
             print('movie found')
+
+            self.movies_count += 1
+            sentiment = 'liked'
+            tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+            sentiment_counter = 0
+            prev_word = ''
+            curr_word = ''
+            negation_flag = False
+            for t in tokens:
+              prev_word = curr_word
+              curr_word = t
+              if prev_word in self.negation_lexicon:
+                #print("negation switch on: " + prev_word)
+                negation_flag = True
+
+              t_stem = self.porter.stem(t)
+              #print('stem: ' + t_stem)
+              if t in self.sentiment:
+                if self.sentiment[t] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+              elif t_stem in self.sentiment_stemmed:
+                if self.sentiment_stemmed[t_stem] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+            print(sentiment_counter)
+            if sentiment_counter >= 0:
+              sentiment = 'liked'
+            else:
+              sentiment = 'didn\'t like'
+            response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
+            
+            if sentiment_counter == 0: 
+              self.movie_inputs[movie_title] = 1
+            else:
+              self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
+
           else:
             print('movie not found')
+            response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
-          self.movies_count += 1
-          sentiment = 'liked'
-          tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-          sentiment_counter = 0
-
-          prev_word = ''
-          curr_word = ''
-          negation_flag = False
-          for t in tokens:
-            prev_word = curr_word
-            curr_word = t
-            if prev_word in self.negation_lexicon:
-              print("negation switch on: " + prev_word)
-              negation_flag = True
-
-            t_stem = self.porter.stem(t)
-            print('stem: ' + t_stem)
-            if t in self.sentiment:
-              if self.sentiment[t] == 'pos':
-                if negation_flag:
-                  sentiment_counter -= 1
-                else:
-                  sentiment_counter += 1
-              else:
-                if negation_flag:
-                  sentiment_counter += 1
-                else:
-                  sentiment_counter -= 1
-            elif t_stem in self.sentiment_stemmed:
-              if self.sentiment_stemmed[t_stem] == 'pos':
-                if negation_flag:
-                  sentiment_counter -= 1
-                else:
-                  sentiment_counter += 1
-              else:
-                if negation_flag:
-                  sentiment_counter += 1
-                else:
-                  sentiment_counter -= 1
-
-          if sentiment_counter >= 0:
-            sentiment = 'liked'
-          else:
-            sentiment = 'didn\'t like'
-          
-          response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
 
         # response = 'processed %s in starter mode' % input
 
@@ -203,7 +223,7 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, self.ratings = ratings()
-      self.movie_titles = set(xx for [xx , genre] in self.titles)
+      self.movie_titles = [xx for [xx , genre] in self.titles]
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
@@ -229,12 +249,10 @@ class Chatbot:
       """Modifies the ratings matrix to make all of the ratings binary"""
       upper_threshold = 3.1
       lower_threshold = 2.9
-      #print self.ratings
       num_rows = len(self.ratings)
       num_cols = len(self.ratings[0])
 
       self.bin_ratings = np.zeros((num_rows, num_cols))
-      # print self.bin_ratings
       for row in xrange(num_rows):
         for col in xrange(num_cols):
           raw_rating = self.ratings[row][col]
@@ -247,13 +265,21 @@ class Chatbot:
              rating = 0
           self.bin_ratings[row][col] = rating
       # print(self.bin_ratings.shape)
+      #print self.bin_ratings
 
 
     def distance(self, u, v):
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-      return np.dot(u, v)
+
+      # Cosine similarity 
+      return spatial.distance.cosine(u,v)
+      # mag_u = np.linalg.norm(u)
+      # mag_v = np.linalg.norm(v)
+      # dot_prod = np.dot(u,v)
+      # cos = float(dot_prod) /(mag_u * mag_v)
+      # return cos
 
 
     def recommend(self, u):
@@ -261,9 +287,28 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-      for row in self.bin_ratings:
-        print(row)
-      pass
+
+      max_rate = 0
+      suggestion = ''
+      i = 0
+      for movie_vec in self.bin_ratings:
+        predicted_rating = 0
+
+        for title, rating in self.movie_inputs.iteritems():
+          index = self.movie_titles.index(title)
+          rating_vec = self.bin_ratings[index]
+
+          similarity = self.distance(rating_vec, movie_vec)
+          if similarity >= 0:
+            predicted_rating += (rating * similarity)
+          
+        if predicted_rating > max_rate:        
+          max_rate = predicted_rating
+          suggestion = self.movie_titles[i]
+        i += 1
+      
+      return suggestion
+      
 
 
     #############################################################################
