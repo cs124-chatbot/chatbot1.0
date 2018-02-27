@@ -10,6 +10,7 @@ import math
 import re
 import os
 import random
+from operator import itemgetter
 
 import numpy as np
 
@@ -145,7 +146,7 @@ class Chatbot:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.recommend_flag > 0:
-          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.recommended_movies[self.recommend_flag])
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.recommended_movies[self.recommend_flag][0])
           if self.recommend_flag < 9:
             self.recommend_flag += 1
         elif len(movies_mentioned) == 0:
@@ -166,7 +167,7 @@ class Chatbot:
                   preference_vec.append(0)
               #print preference_vec
               self.recommended_movies = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.recommended_movies[self.recommend_flag])
+              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.recommended_movies[self.recommend_flag][0])
               self.recommend_flag = 1
 
         # More than 1 movied mentioned in the same input
@@ -315,7 +316,7 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-
+      count = 0
       suggestions = []
       for i, movie_vec in enumerate(self.bin_ratings):
         predicted_rating = 0
@@ -339,12 +340,23 @@ class Chatbot:
       return suggestion
 
         if len(suggestions) < 10:
+<<<<<<< HEAD
+          suggestions.append((self.movie_titles[i], predicted_rating)) 
+          suggestions = sorted(suggestions, key=itemgetter(1))
+          count += 1
+        elif predicted_rating > suggestions[9][1]:
+          suggestions[9] = (self.movie_titles[i], predicted_rating)
+          suggestions = sorted(suggestions, key=itemgetter(1))
+          count += 1
+      print "COUNT = %s" % (count)
+=======
           suggestions.append(self.movie_titles[i])
           suggestions = sorted(suggestions)
         elif predicted_rating > suggestions[9]:
           suggestions[9] = self.movie_titles[i]
           suggestions = sorted(suggestions)
 
+>>>>>>> 443ad25bfe04b54d2f44f8f890bbc54460df6721
       return suggestions
 
 
