@@ -316,47 +316,34 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-      count = 0
+      # count = 0
       suggestions = []
+      # loopCt = 0
       for i, movie_vec in enumerate(self.bin_ratings):
         predicted_rating = 0
-
+        if self.movie_titles[i] in self.movie_inputs:
+          continue
+        
         for title, rating in self.movie_inputs.iteritems():
           index = self.movie_titles.index(title)
           rating_vec = self.bin_ratings[index]
 
-          if i == index:
-            print title
-
           similarity = self.distance(rating_vec, movie_vec)
-          if similarity >= 0:
+          if similarity >= 0: # solve for RuntimeError?
             predicted_rating += (rating * similarity)
-          recommendations.append(predicted_rating)
-
-        if predicted_rating > max_rate:        
-          max_rate = predicted_rating
-          suggestion = self.movie_titles[i]
       
-      return suggestion
-
         if len(suggestions) < 10:
-<<<<<<< HEAD
           suggestions.append((self.movie_titles[i], predicted_rating)) 
           suggestions = sorted(suggestions, key=itemgetter(1))
-          count += 1
+          # count += 1
         elif predicted_rating > suggestions[9][1]:
           suggestions[9] = (self.movie_titles[i], predicted_rating)
           suggestions = sorted(suggestions, key=itemgetter(1))
-          count += 1
-      print "COUNT = %s" % (count)
-=======
-          suggestions.append(self.movie_titles[i])
-          suggestions = sorted(suggestions)
-        elif predicted_rating > suggestions[9]:
-          suggestions[9] = self.movie_titles[i]
-          suggestions = sorted(suggestions)
+          # count += 1
+        # loopCt += 1
 
->>>>>>> 443ad25bfe04b54d2f44f8f890bbc54460df6721
+      # print 'loopCt: %s' % (loopCt)
+      # print "COUNT = %s" % (count)
       return suggestions
 
 
