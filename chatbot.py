@@ -330,7 +330,6 @@ class Chatbot:
             predicted_rating += (rating * similarity)
 
         if len(suggestions) < 10:
-<<<<<<< HEAD
           suggestions.append((self.movie_titles[i], predicted_rating)) 
           suggestions = sorted(suggestions, key=itemgetter(1))
           count += 1
@@ -339,14 +338,6 @@ class Chatbot:
           suggestions = sorted(suggestions, key=itemgetter(1))
           count += 1
       print "COUNT = %s" % (count)
-=======
-          suggestions.append(self.movie_titles[i])
-          suggestions = sorted(suggestions)
-        elif predicted_rating > suggestions[9]:
-          suggestions[9] = self.movie_titles[i]
-          suggestions = sorted(suggestions)
-
->>>>>>> 443ad25bfe04b54d2f44f8f890bbc54460df6721
       return suggestions
 
 
