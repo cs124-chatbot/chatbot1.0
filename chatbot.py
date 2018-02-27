@@ -118,7 +118,9 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         response = 'processed %s in creative mode!!' % input
+      
       else:
+        # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
 
         if len(movies_mentioned) == 0:
@@ -127,21 +129,22 @@ class Chatbot:
                 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
                 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
               ]
-
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
               response = 'Ok. That\'s enough for me to make a recommendation.' 
-              #print self.movie_inputs
+              print self.movie_inputs
+
               preference_vec = []
               for title in self.movie_titles:
                 if title in self.movie_inputs:
                   preference_vec.append(self.movie_inputs[title])
                 else:
                   preference_vec.append(0)
-              # print preference_vec
+              print preference_vec
               recommended_movie = self.recommend(preference_vec)
               response = ("I suggest you watch \"%s.\"") % (recommended_movie)
 
+        # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
 
@@ -156,9 +159,7 @@ class Chatbot:
           
           # Check to see if movie title is known
           if movie_title in self.movie_titles:
-            print('movie found')
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-
             self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
@@ -168,13 +169,11 @@ class Chatbot:
 
             for t in tokens:
               prev_word = curr_word
-
               curr_word = t
               if prev_word in self.negation_lexicon:
                 negation_flag = True
 
               t_stem = self.porter.stem(t)
-
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -198,7 +197,7 @@ class Chatbot:
                     sentiment_counter += 1
                   else:
                     sentiment_counter -= 1
-            print(sentiment_counter)
+            # print(sentiment_counter)
 
             if sentiment_counter >= 0:
               sentiment = 'liked'
@@ -277,12 +276,11 @@ class Chatbot:
       # Note: you can also think of this as computing a similarity measure
 
       # Cosine similarity 
-      return spatial.distance.cosine(u,v)
-      # mag_u = np.linalg.norm(u)
-      # mag_v = np.linalg.norm(v)
-      # dot_prod = np.dot(u,v)
-      # cos = float(dot_prod) /(mag_u * mag_v)
-      # return cos
+      mag_u = np.linalg.norm(u)
+      mag_v = np.linalg.norm(v)
+      dot_prod = np.dot(u,v)
+      cos = float(dot_prod) /(mag_u * mag_v)
+      return cos
 
 
     def recommend(self, u):
@@ -293,8 +291,7 @@ class Chatbot:
 
       max_rate = 0
       suggestion = ''
-      i = 0
-      for movie_vec in self.bin_ratings:
+      for i, movie_vec in enumerate(self.bin_ratings):
         predicted_rating = 0
 
         for title, rating in self.movie_inputs.iteritems():
@@ -308,7 +305,6 @@ class Chatbot:
         if predicted_rating > max_rate:        
           max_rate = predicted_rating
           suggestion = self.movie_titles[i]
-        i += 1
       
       return suggestion
       
