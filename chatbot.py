@@ -145,7 +145,6 @@ class Chatbot:
           sentiment = 'liked'
           tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
           sentiment_counter = 0
-          
 
           prev_word = ''
           curr_word = ''
@@ -181,11 +180,12 @@ class Chatbot:
                   sentiment_counter += 1
                 else:
                   sentiment_counter -= 1
-          print(sentiment_counter)
+
           if sentiment_counter >= 0:
             sentiment = 'liked'
           else:
             sentiment = 'didn\'t like'
+          
           response = 'So you ' + sentiment + ' \"' + movie_title + '\". Got it. How about another movie?'
 
         # response = 'processed %s in starter mode' % input
@@ -246,15 +246,14 @@ class Chatbot:
           else:
              rating = 0
           self.bin_ratings[row][col] = rating
-      print self.bin_ratings
+      # print(self.bin_ratings.shape)
 
 
     def distance(self, u, v):
       """Calculates a given distance function between vectors u and v"""
       # TODO: Implement the distance function between vectors u and v]
       # Note: you can also think of this as computing a similarity measure
-
-      pass
+      return np.dot(u, v)
 
 
     def recommend(self, u):
@@ -262,7 +261,8 @@ class Chatbot:
       collaborative filtering"""
       # TODO: Implement a recommendation function that takes a user vector u
       # and outputs a list of movies recommended by the chatbot
-
+      for row in self.bin_ratings:
+        print(row)
       pass
 
 
