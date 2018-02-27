@@ -48,6 +48,8 @@ class Chatbot:
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
       self.movies_count = 0
       self.movie_inputs = {}
+      self.recommend_flag = 0
+      self.recommended_movies = []
 
     #############################################################################
     # 1. WARM UP REPL
@@ -121,8 +123,11 @@ class Chatbot:
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
-
-        if len(movies_mentioned) == 0:
+        if self.recommend_flag > 0:
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.recommended_movies[self.recommend_flag])
+          if self.recommend_flag < 9:
+            self.recommend_flag += 1
+        elif len(movies_mentioned) == 0:
             if self.movies_count < MIN_NUM_MOVIES_NEEDED:
               possible_responses = [
                 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
@@ -130,7 +135,7 @@ class Chatbot:
               ]
               response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             else:
-              response = 'Ok. That\'s enough for me to make a recommendation.' 
+              text = 'Ok. That\'s enough for me to make a recommendation.' 
               #print self.movie_inputs
 
               preference_vec = []
@@ -140,8 +145,9 @@ class Chatbot:
                 else:
                   preference_vec.append(0)
               #print preference_vec
-              recommended_movie = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (response, recommended_movie[0])
+              self.recommended_movies = self.recommend(preference_vec)
+              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.recommended_movies[self.recommend_flag])
+              self.recommend_flag = 1
 
         # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
@@ -302,10 +308,10 @@ class Chatbot:
           
         if len(suggestions) < 10:
           suggestions.append(self.movie_titles[i]) 
-          suggestions = sort(suggestions)
+          suggestions = sorted(suggestions)
         elif predicted_rating > suggestions[9]:
           suggestions[9] = self.movie_titles[i]
-          suggestions = sort(suggestions)
+          suggestions = sorted(suggestions)
  
       return suggestions
       
