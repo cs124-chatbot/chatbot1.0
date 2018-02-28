@@ -20,20 +20,22 @@ from movielens import ratings
 from random import randint
 from PorterStemmer import PorterStemmer
 
+
+#############################################################################
+# Constants 
+#############################################################################
+
 QUOTATION_REGEX = r'\"(.*?)\"'
+YEAR_REGEX = r'\((.*?)\)'
+
 MIN_NUM_MOVIES_NEEDED = 5
 # Binarize Constants
 UPPER_THRESHOLD = 3.1
 LOWER_THRESHOLD = 2.9
 
-'''
-TODO: Feb 22, 2018
-Sentiment:
-1) count pos and neg words
-2) if prev_word in [not, neither, nor, n't, ...]
-   then negate curr_word
-4) only count words after 'but', 'although', 'however', ...
-'''
+#############################################################################
+# THE CLASS 
+#############################################################################
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -193,14 +195,25 @@ class Chatbot:
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
 
+        # 1 Movie Mentioned
         else:
           # Search for movie title in quotes
           match = re.search(QUOTATION_REGEX, input)
           quote_start = match.start(0)
           quote_end = match.end(0)
-
-          input_movie_removed = input[:quote_start] + input[quote_end:]
           movie_title = input[quote_start + 1 : quote_end - 1]
+          input_movie_removed = input[:quote_start] + input[quote_end:]
+
+          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          # Creative
+          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          paren_matches = re.findall(YEAR_REGEX, input)
+          year = ''
+          if len(paren_matches) >= 1:
+            year = paren_matches[len(paren_matches) - 1]
+          print 'year: %s' % year
+
+          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
           movie_found = False
           readable_title = movie_title
@@ -341,8 +354,8 @@ class Chatbot:
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
       mag_prod = mag_u * mag_v
-      # if mag_prod != 0:
-      cos = dot_prod / mag_prod
+      if mag_prod != 0:
+        cos = dot_prod / mag_prod
       return cos
 
     def recommend(self, u):
