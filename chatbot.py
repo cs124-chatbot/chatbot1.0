@@ -13,8 +13,6 @@ import random
 from operator import itemgetter
 
 import numpy as np
-from scipy import spatial
-
 
 from movielens import ratings
 from random import randint
@@ -300,7 +298,7 @@ class Chatbot:
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
             else:
-              return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of ' + movie_title + '?'
+              return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
@@ -373,8 +371,6 @@ class Chatbot:
       # Note: you can also think of this as computing a similarity measure
 
       # Cosine similarity
-      #cos = 1 - spatial.distance.cosine(u,v)
-
       cos = 0
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
