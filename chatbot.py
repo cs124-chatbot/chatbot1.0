@@ -47,7 +47,7 @@ class Chatbot:
       self.read_data()
       self.binarize()
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
-      self.movies_count = 0
+      #self.movies_count = 0
       self.movie_inputs = {}
       self.recommend_flag = 0
       self.recommended_movies = []
@@ -167,7 +167,7 @@ class Chatbot:
           if self.recommend_flag < 9:
             self.recommend_flag += 1
         elif len(movies_mentioned) == 0:
-            if self.movies_count < MIN_NUM_MOVIES_NEEDED:
+            if len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
               possible_responses = [
                 'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
                 'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
@@ -214,7 +214,7 @@ class Chatbot:
 
           if movie_found:
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-            self.movies_count += 1
+            #self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
             prev_word = ''
@@ -228,6 +228,9 @@ class Chatbot:
                 negation_flag = True
 
               t_stem = self.porter.stem(t)
+              if t.strip() in ['but', ',but', ', but']:
+                sentiment_counter = 0
+
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -269,6 +272,7 @@ class Chatbot:
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
+      print self.movie_inputs
       return response
 
 
@@ -333,11 +337,15 @@ class Chatbot:
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
+<<<<<<< HEAD
       mag_prod = mag_u * mag_v
 
       # if mag_prod != 0:
       cos = dot_prod / mag_prod
 
+=======
+      cos = dot_prod / (mag_u * mag_v)
+>>>>>>> 9fd253039b86bfa23247dde1dafeb25acb42c363
       return cos
 
 
