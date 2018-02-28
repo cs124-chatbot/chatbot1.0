@@ -13,6 +13,8 @@ import random
 from operator import itemgetter
 
 import numpy as np
+from scipy import spatial
+
 
 from movielens import ratings
 from random import randint
@@ -252,7 +254,7 @@ class Chatbot:
                     sentiment_counter += 1
                   else:
                     sentiment_counter -= 1
-        
+
             if sentiment_counter > 0:
               sentiment = 'liked'
             elif sentiment_counter < 0:
@@ -263,9 +265,9 @@ class Chatbot:
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
             if sentiment_counter == 0:
-              self.movie_inputs[movie_title] = 1
+              self.movie_inputs[movie_title] = 1.0
             else:
-              self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
+              self.movie_inputs[movie_title] = (float(sentiment_counter) / abs(sentiment_counter))
 
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
@@ -314,13 +316,13 @@ class Chatbot:
       for row in xrange(num_rows):
         for col in xrange(num_cols):
           raw_rating = self.ratings[row][col]
-          rating = 0
+          rating = 0.0
           if raw_rating >= UPPER_THRESHOLD:
-            rating = 1
+            rating = 1.0
           elif raw_rating <= LOWER_THRESHOLD and raw_rating > 0:
-            rating = -1
+            rating = -1.0
           else:
-             rating = 0
+             rating = 0.0
           self.bin_ratings[row][col] = rating
 
 
@@ -330,10 +332,13 @@ class Chatbot:
       # Note: you can also think of this as computing a similarity measure
 
       # Cosine similarity
+      #cos = 1 - spatial.distance.cosine(u,v)
+      cos = 0
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
       cos = dot_prod / (mag_u * mag_v)
+
       return cos
 
 
@@ -349,17 +354,22 @@ class Chatbot:
         predicted_rating = 0
         if self.movie_titles[i] in self.movie_inputs:
           continue
-        
+
         for title, rating in self.movie_inputs.iteritems():
           index = self.movie_titles.index(title)
-          rating_vec = self.bin_ratings[index]
+          rating_vec = self.ratings[index]
+          #print 'Test:'
+          #print index
+          #print title
+          #print self.bin_ratings[index]
+          #print self.ratings[index]
 
           similarity = self.distance(rating_vec, movie_vec)
           if similarity >= 0: # solve for RuntimeError?
             predicted_rating += (rating * similarity)
-      
+
         if len(suggestions) < 10:
-          suggestions.append((self.movie_titles[i], predicted_rating)) 
+          suggestions.append((self.movie_titles[i], predicted_rating))
           suggestions = sorted(suggestions, key=itemgetter(1))
           # count += 1
         elif predicted_rating > suggestions[9][1]:
