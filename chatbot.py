@@ -51,12 +51,12 @@ class Chatbot:
       self.read_data()
       self.binarize()
       self.negation_lexicon = set(self.readFile('deps/negation.txt'))
-      #self.movies_count = 0
       self.movie_inputs = {}
       self.recommend_flag = 0
       self.recommended_movies = []
       self.mag_u_count = 0
       self.mag_v_count = 0
+      self.bad_input_count = 0
 
     #############################################################################
     # 1. WARM UP REPL
@@ -68,7 +68,7 @@ class Chatbot:
       # TODO: Write a short greeting message                                      #
       #############################################################################
 
-      greeting_message = 'The name\'s Bot. Movie Bot. I\'m here to give you recommendations on what movies to watch. So go ahead, tell me about a movie that you\'ve seen.'
+      greeting_message = 'The name\'s Bot. James--, I mean, Movie Bot. I\'m here to give you recommendations on what movies to watch. So go ahead, tell me about a movie that you\'ve seen.'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -166,37 +166,62 @@ class Chatbot:
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
-        if self.recommend_flag > 0:
-          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
-          if self.recommend_flag < 9:
-            self.recommend_flag += 1
+        if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
+          self.recommend_flag += 1
+        elif self.recommend_flag == 10:
+          response = "I gave you 10 recommendations already! Did you watch all of them already? I can make more recommendations, but you'll have to update me on your preferences."
+          self.movie_inputs = {}
+          self.recommended_movies = []
+          self.recommend_flag = 0
         elif len(movies_mentioned) == 0:
-            if len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
-              possible_responses = [
-                'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
-                'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.'
-              ]
-              response = possible_responses[random.randint(0, len(possible_responses) - 1)]
-            else:
-              text = 'Ok. That\'s enough for me to make a recommendation.'
-              #print self.movie_inputs
-              preference_vec = []
-              for title in self.movie_titles:
-                if title in self.movie_inputs:
-                  preference_vec.append(self.movie_inputs[title])
-                else:
-                  preference_vec.append(0)
-              #print preference_vec
-              self.recommended_movies = self.recommend(preference_vec)
-              response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (if not, enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
-              self.recommend_flag = 1
+          if self.bad_input_count == 2:
+            response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
+            self.bad_input_count += 1
+          elif self.bad_input_count > 2:
+            response = "Be nice and tell me about a movie that you've watched. I've got places to go! \nSpeaking of which... \"Going Places (Valseuses, Les) (1974)\" is not bad."
+            self.bad_input_count += 1
+          elif input == ':no':
+            self.movie_inputs = {}
+            self.recommended_movies = []
+            self.recommend_flag = 0
+            possible_responses = [
+              'OK. Tell me more about movies that you\'ve watched. (enter :quit to exit)',
+              'Sure. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes. (enter :quit to exit)',
+              'So, tell me about another movie. (enter :quit to exit)'
+            ]
+            response = possible_responses[random.randint(0, len(possible_responses) - 1)]
+            self.bad_input_count += 1
+          elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
+            possible_responses = [
+              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'I know I\'m supposed to be a smart bot... but in order for me to make good recommendations, I need you to tell me a few more movies that you\'ve seen. Thanks!'
+            ]
+            response = possible_responses[random.randint(0, len(possible_responses) - 1)]
+            self.bad_input_count += 1
+          else:
+            self.bad_input_count = 0
+            text = 'Ok. That\'s enough for me to make a recommendation.'
+            #print self.movie_inputs
+            preference_vec = []
+            for title in self.movie_titles:
+              if title in self.movie_inputs:
+                preference_vec.append(self.movie_inputs[title])
+              else:
+                preference_vec.append(0)
+            #print preference_vec
+            self.recommended_movies = self.recommend(preference_vec)
+            response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[0][0]))
+            self.recommend_flag = 1
 
         # More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
-
+          self.bad_input_count = 0
         # 1 Movie Mentioned
         else:
+          self.bad_input_count = 0
           # Search for movie title in quotes
           match = re.search(QUOTATION_REGEX, input)
           quote_start = match.start(0)
@@ -275,7 +300,7 @@ class Chatbot:
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
             else:
-              return 'Sorry, didn\'t quite get whether you liked ' + readable_title + '. Can you elaborate on what you thought of ' + movie_title + '?'
+              return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of ' + movie_title + '?'
 
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
@@ -286,7 +311,8 @@ class Chatbot:
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
-      print self.movie_inputs
+      # print self.movie_inputs
+      # print self.recommend_flag
       return response
 
 
