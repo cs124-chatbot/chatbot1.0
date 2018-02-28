@@ -51,6 +51,8 @@ class Chatbot:
       self.movie_inputs = {}
       self.recommend_flag = 0
       self.recommended_movies = []
+      self.mag_u_count = 0
+      self.mag_v_count = 0
 
     #############################################################################
     # 1. WARM UP REPL
@@ -260,9 +262,9 @@ class Chatbot:
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
             if sentiment_counter == 0:
-              self.movie_inputs[movie_title] = 1
+              self.movie_inputs[movie_title] = 1.0
             else:
-              self.movie_inputs[movie_title] = (sentiment_counter / abs(sentiment_counter))
+              self.movie_inputs[movie_title] = float((sentiment_counter / abs(sentiment_counter)))
 
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
@@ -311,13 +313,13 @@ class Chatbot:
       for row in xrange(num_rows):
         for col in xrange(num_cols):
           raw_rating = self.ratings[row][col]
-          rating = 0
+          rating = 0.0
           if raw_rating >= UPPER_THRESHOLD:
-            rating = 1
+            rating = 1.0
           elif raw_rating <= LOWER_THRESHOLD and raw_rating > 0:
-            rating = -1
+            rating = -1.0
           else:
-             rating = 0
+             rating = 0.0
           self.bin_ratings[row][col] = rating
 
 
@@ -327,10 +329,15 @@ class Chatbot:
       # Note: you can also think of this as computing a similarity measure
 
       # Cosine similarity
+      cos = 0
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
-      cos = float(dot_prod) /(mag_u * mag_v)
+      mag_prod = mag_u * mag_v
+
+      # if mag_prod != 0:
+      cos = dot_prod / mag_prod
+
       return cos
 
 
@@ -351,6 +358,10 @@ class Chatbot:
           index = self.movie_titles.index(title)
           rating_vec = self.bin_ratings[index]
 
+          # print 'rating_vec: %s' % (rating_vec)
+          # print 'movie_vec: %s' % (movie_vec)
+          # print
+
           similarity = self.distance(rating_vec, movie_vec)
           if similarity >= 0: # solve for RuntimeError?
             predicted_rating += (rating * similarity)
@@ -367,6 +378,8 @@ class Chatbot:
 
       # print 'loopCt: %s' % (loopCt)
       # print "COUNT = %s" % (count)
+      # print(self.mag_u_count)
+      # print(self.mag_v_count)
       return suggestions
 
 
