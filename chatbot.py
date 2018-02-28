@@ -226,6 +226,9 @@ class Chatbot:
                 negation_flag = True
 
               t_stem = self.porter.stem(t)
+              if t.strip() in ['but', ',but', ', but']:
+                sentiment_counter = 0
+
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
