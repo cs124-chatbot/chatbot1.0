@@ -337,15 +337,9 @@ class Chatbot:
       mag_u = np.linalg.norm(u)
       mag_v = np.linalg.norm(v)
       dot_prod = np.dot(u,v)
-<<<<<<< HEAD
       mag_prod = mag_u * mag_v
-
       # if mag_prod != 0:
       cos = dot_prod / mag_prod
-
-=======
-      cos = dot_prod / (mag_u * mag_v)
->>>>>>> 9fd253039b86bfa23247dde1dafeb25acb42c363
       return cos
 
 
