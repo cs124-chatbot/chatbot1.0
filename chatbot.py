@@ -282,7 +282,7 @@ class Chatbot:
             if sentiment_counter == 0:
               self.movie_inputs[movie_title] = 1.0
             else:
-              self.movie_inputs[movie_title] = float((sentiment_counter / abs(sentiment_counter)))
+              self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
@@ -373,7 +373,7 @@ class Chatbot:
 
         for title, rating in self.movie_inputs.iteritems():
           index = self.movie_titles.index(title)
-          rating_vec = self.ratings[index]
+          rating_vec = self.bin_ratings[index]
           #print 'Test:'
           #print index
           #print title
