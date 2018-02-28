@@ -167,7 +167,7 @@ class Chatbot:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
-          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[self.recommend_flag][0]))
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
           self.recommend_flag += 1
         elif self.recommend_flag == 10:
           response = "I gave you 10 recommendations already! Did you watch all of them already? I can make more recommendations, but you'll have to update me on your preferences."
@@ -212,7 +212,7 @@ class Chatbot:
                 preference_vec.append(0)
             #print preference_vec
             self.recommended_movies = self.recommend(preference_vec)
-            response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[0][0]))
+            response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[9][0]))
             self.recommend_flag = 1
 
         # More than 1 movied mentioned in the same input
@@ -411,15 +411,15 @@ class Chatbot:
           # print
 
           similarity = self.distance(rating_vec, movie_vec)
-          if similarity >= 0: # solve for RuntimeError?
-            predicted_rating += (rating * similarity)
+          #if similarity >= 0: # solve for RuntimeError?
+          predicted_rating += (rating * similarity)
 
         if len(suggestions) < 10:
           suggestions.append((self.movie_titles[i], predicted_rating))
           suggestions = sorted(suggestions, key=itemgetter(1))
           # count += 1
-        elif predicted_rating > suggestions[9][1]:
-          suggestions[9] = (self.movie_titles[i], predicted_rating)
+        elif predicted_rating >= suggestions[0][1]:
+          suggestions[0] = (self.movie_titles[i], predicted_rating)
           suggestions = sorted(suggestions, key=itemgetter(1))
           # count += 1
         # loopCt += 1
