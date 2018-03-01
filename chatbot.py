@@ -26,6 +26,7 @@ from PorterStemmer import PorterStemmer
 QUOTATION_REGEX = r'\"(.*?)\"'
 ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
+CAPITALIZED_PHRASE = r'(?=([A-Z].*))'
 
 MIN_NUM_MOVIES_NEEDED = 5
 EDIT_DIST_THRESHOLD = 4
@@ -60,6 +61,9 @@ class Chatbot:
       self.bad_input_count = 0
       self.genres_input = {}
       self.carryover = ()
+      self.potential_titles = []
+      self.emotionDict = {}
+      self.setupEmotion()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -109,6 +113,26 @@ class Chatbot:
       f.close()
       result = self.segmentWords('\n'.join(contents))
       return result
+
+    #sets up the emotion lexicon
+    def setupEmotion(self):
+      self.emotionDict = {}
+      #listEmotions = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
+      self.emotionDict['anger'] = ['angry', 'rage', 'annoy', 'mad', 'furious', 'enraged', 'wrathful', 'indignant', 'exasperated', 'inflamed', \
+                              'enrage', 'infuriate', 'arouse', 'nettle', 'madden']
+      self.emotionDict['anticipation'] = ['anticipate' , 'vigilance', 'interest', 'assume', 'await', 'count on', 'forecast', 'foresee', 'prepare', 'conjecture', 'divine', 'figure' , 'prognosticate' , 'prophecy', 'wait','look for', 'foretaste', 'prevision']
+      self.emotionDict['disgust'] = ['disgust', 'antipathy', 'dislike', 'distaste', 'hatred', 'loathing', 'revulsion', 'sickness', 'repugnance', 'nausea', 'detestation', 'yuck' , 'yikes']
+      self.emotionDict['fear'] = ['fear', 'apprehension', 'fright', 'dread', 'terror', 'alarm', 'dismay', 'anxiety', 'scare', 'awe', 'horror', 'panic', 'apprehension', 'afraid', 'frightened', 'alarmed', 'terrified', 'panicked', 'fearful', \
+      'unnerved', 'insecure', 'timid', 'shy', 'skittish', 'jumpy', 'disquieted', 'worried', 'vexed', 'troubled', 'disturbed', 'horrified', 'terrorized', 'shocked', 'petrified', 'haunted', 'timorous', 'shrinking', 'tremulous', 'stupefied', 'paralyzed', 'stunned', 'apprehensive']
+      self.emotionDict['joy'] = ['joy', 'serenity', 'pleased', 'contented', 'satisfied', 'delighted', 'elated', 'joyful', 'cheerful', 'ecstatic', 'jubilant', 'gay', 'tickled', 'gratified', 'glad', 'blissful', 'overjoyed', 'appreciate', 'delight in', \
+      'pleased', 'indulge', 'luxuriate', 'bask', 'relish', 'devour', 'savor']
+      self.emotionDict['sadness'] = ['sad', 'grief', 'miserable', 'uncomfortable', 'wretched', 'heart-broken', 'unfortunate', 'poor', 'downhearted', 'sorrowful', 'depressed', 'dejected', 'melancholy', 'glum', 'gloomy', 'dismal', 'discouraged', 'unhappy']
+      self.emotionDict['surprise'] = ['surprise', 'distraction', 'amaze', 'astonish', 'awe', 'bewilderment', 'consternation', 'curiosity', 'jolt', 'miracle','shock', 'wonder', 'eureka', 'marvel', 'wonderment', 'astoundment', 'unexpected', 'unforseen', 'thunderbolt']
+      self.emotionDict['trust'] = ['trust', 'accurate', 'proper', 'precise', 'exact', 'valid', 'genuine', 'trusty', 'steady', 'loyal', 'dependable', 'sincere', 'staunch', 'correct', 'accurate', 'factual', 'true', 'just',\
+       'honest', 'upright', 'lawful', 'moral', 'proper', 'apt', 'legal', 'fair', 'obedient', 'honorable', 'reliable', 'trustworthy', 'safe', 'righteous']
+
+      for emotion, synList in self.emotionDict.iteritems():
+        self.emotionDict[emotion] = [self.porter.stem(syn) for syn in synList]
 
     def removeYear(self, title):
       title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
@@ -195,8 +219,12 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         print "TURBO MODE ACTIVATED"
+        print self.movie_inputs
         # Old response = 'processed %s in creative mode!!' % input
+
+        #############################################################################
         # Find movie(s) mentioned by user
+        #############################################################################
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.carryover:
           curr_title = self.carryover[0][0][0]
@@ -227,8 +255,8 @@ class Chatbot:
 
           else:
             return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
-
-          if self.carryover[1] >= 0:
+          sent = self.carryover[1]
+          if sent >= 0:
             sentiment = 'liked'
           else:
             sentiment = 'didn\'t like'
@@ -236,7 +264,11 @@ class Chatbot:
           response = 'Oh I see! You ' + sentiment + ' \"' + matched_movie + '\". Thanks for bearing with me. Let\'s continue! Tell me about more movies you\'ve seen.'
           self.carryover = ()
           movie_title = matched_movie
+          self.movie_inputs[movie_title] = float(sent / abs(sent))
 
+        #############################################################################
+        # User wants additional recommendations
+        #############################################################################
         elif self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
           response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
           self.recommend_flag += 1
@@ -245,8 +277,53 @@ class Chatbot:
           self.movie_inputs = {}
           self.recommended_movies = []
           self.recommend_flag = 0
+
+
+        #############################################################################
+        # User did not mention a movie in QUOTES
+        #############################################################################
         elif len(movies_mentioned) == 0:
-          if self.bad_input_count == 2:
+
+          all_potential_titles = []
+          capitalized_phrases = re.findall(CAPITALIZED_PHRASE, input)
+          # print 'capitalized_phrases:'
+          # print capitalized_phrases
+          for cap_phrase in capitalized_phrases:
+            words = cap_phrase.split(' ')
+            # print 'words:'
+            # print words
+            max_phrase_len = len(words)
+
+            all_potential_titles.append(cap_phrase)
+            for word_remove in xrange(1, max_phrase_len):
+              potential_title = " ".join(words[:-word_remove])
+              # print potential_title
+              all_potential_titles.append(potential_title)
+          # print 'all_potential_titles:'
+          # print all_potential_titles
+
+          # Found potential titles
+          if len(all_potential_titles) > 0:
+            for pot_title in all_potential_titles:
+              pot_year = self.getMovieYear(pot_title)
+
+              if pot_year == "":
+                for no_yr_title, year in self.no_year_titles:
+                  edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
+                  if edit_distance == 0:
+                    self.potential_titles.append((no_yr_title, edit_distance))
+              else:
+                for real_title in self.movie_titles:
+                  edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
+                  if edit_distance == 0:
+                    self.potential_titles.append((real_title, edit_distance))
+
+            # Then sort by highest length of match
+            self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
+            best_match_unquoted = self.potential_titles[0][0]
+            response = "I think you're talking about \"" + best_match_unquoted + "\". What did you think of \"" + best_match_unquoted + "\"?"
+
+          elif self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
             self.bad_input_count += 1
           elif self.bad_input_count > 2:
@@ -263,6 +340,10 @@ class Chatbot:
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             self.bad_input_count += 1
+
+          #############################################################################
+          # User did not mention enough movies to activate recommendation
+          #############################################################################
           elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
             possible_responses = [
               'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
@@ -271,6 +352,10 @@ class Chatbot:
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             self.bad_input_count += 1
+
+          #############################################################################
+          # User DID mention enough movies for a recommendation
+          #############################################################################
           else:
             self.bad_input_count = 0
             text = 'Ok. That\'s enough for me to make a recommendation.'
@@ -286,11 +371,16 @@ class Chatbot:
             response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[9][0]))
             self.recommend_flag = 1
 
+        #############################################################################
         # More than 1 movied mentioned in the same input
+        #############################################################################
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
           self.bad_input_count = 0
+
+        #############################################################################
         # 1 Movie Mentioned
+        #############################################################################
         else:
           self.bad_input_count = 0
           # Search for movie title in quotes
@@ -300,7 +390,12 @@ class Chatbot:
           movie_title = input[quote_start + 1 : quote_end - 1]
           input_movie_removed = input[:quote_start] + input[quote_end:]
 
-          movie_found = False
+          ################################################
+          # BOOLEAN FOR CHECKING IF A MOVIE IS MENTIONED #
+          ################################################
+          movie_found = False                            #
+          ################################################
+
           readable_title = movie_title
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
@@ -431,6 +526,8 @@ class Chatbot:
             #self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
+            emotion_counter = {}
+            listEmotions = ['joy', 'sadnesss', 'anger', 'fear', 'trust', 'disgust', 'anticipation', 'surprise']
             prev_word = ''
             curr_word = ''
             negation_flag = False
@@ -444,6 +541,28 @@ class Chatbot:
               t_stem = self.porter.stem(t)
               if t.strip() in ['but', ',but', ', but']:
                 sentiment_counter = 0
+
+              for emotion, synList in self.emotionDict.iteritems():
+                if negation_flag:
+                  if t_stem in synList:
+                    emotionOpp = ''
+                    indexEmotion = listEmotions.index(emotion)
+                    if indexEmotion % 2 == 0:
+                      emotionOpp = listEmotions[indexEmotion + 1]
+                    else:
+                      emotionOpp = listEmotions[indexEmotion - 1]
+                    if emotion not in emotion_counter:
+                      emotion_counter[emotionOpp] = 1
+                    else:
+                      emotion_counter[emotionOpp] += 1
+                    break
+                else:
+                  if t_stem in synList:
+                    if emotion not in emotion_counter:
+                      emotion_counter[emotion] = 1
+                    else:
+                      emotion_counter[emotion] += 1
+                    break
 
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
@@ -475,8 +594,8 @@ class Chatbot:
               #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) - 1
+              #for g in self.getGenresList(movie_title):
+              #  self.genres_input[g] = self.genres_input.get(g, 0) - 1
 
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
@@ -674,6 +793,7 @@ class Chatbot:
             return False
       return True
     #returns minimum editDistance between two strings
+
     def minDistance(self, title1, title2):
       len1 = len(title1)
       len2 = len(title2)
