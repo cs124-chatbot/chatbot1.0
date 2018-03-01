@@ -27,6 +27,7 @@ QUOTATION_REGEX = r'\"(.*?)\"'
 ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
 ROMAN_NUM_REGEX = r'^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$'
+CAPITALIZED_PHRASE = r'(?=([A-Z].*))'
 
 MIN_NUM_MOVIES_NEEDED = 5
 # Binarize Constants
@@ -61,6 +62,7 @@ class Chatbot:
       self.genres_input = {}
       self.carryover = ()
       self.series_carryover = ()
+      self.potential_titles = []
 
     #############################################################################
     # 1. WARM UP REPL
@@ -327,10 +329,50 @@ class Chatbot:
 
 
         #############################################################################
-        # User did not mention a movie
+        # User did not mention a movie in QUOTES
         #############################################################################
         elif len(movies_mentioned) == 0:
-          if self.bad_input_count == 2:
+
+          all_potential_titles = []
+          capitalized_phrases = re.findall(CAPITALIZED_PHRASE, input)
+          # print 'capitalized_phrases:'
+          # print capitalized_phrases
+          for cap_phrase in capitalized_phrases:
+            words = cap_phrase.split(' ')
+            # print 'words:'
+            # print words
+            max_phrase_len = len(words)
+            
+            all_potential_titles.append(cap_phrase)
+            for word_remove in xrange(1, max_phrase_len):
+              potential_title = " ".join(words[:-word_remove]) 
+              # print potential_title
+              all_potential_titles.append(potential_title)
+          # print 'all_potential_titles:'
+          # print all_potential_titles
+
+          # Found potential titles
+          if len(all_potential_titles) > 0:
+            for pot_title in all_potential_titles:
+              pot_year = self.getMovieYear(pot_title)
+
+              if pot_year == "":
+                for no_yr_title, year in self.no_year_titles:
+                  edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
+                  if edit_distance == 0:
+                    self.potential_titles.append((no_yr_title, edit_distance))
+              else:
+                for real_title in self.movie_titles:
+                  edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
+                  if edit_distance == 0:
+                    self.potential_titles.append((real_title, edit_distance))
+
+            # Then sort by highest length of match
+            self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
+            best_match_unquoted = self.potential_titles[0][0]
+            response = "I think you're talking about \"" + best_match_unquoted + "\". What did you think of \"" + best_match_unquoted + "\"?"
+
+          elif self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
             self.bad_input_count += 1
           elif self.bad_input_count > 2:
@@ -397,7 +439,12 @@ class Chatbot:
           movie_title = input[quote_start + 1 : quote_end - 1]
           input_movie_removed = input[:quote_start] + input[quote_end:]
 
-          movie_found = False
+          ################################################
+          # BOOLEAN FOR CHECKING IF A MOVIE IS MENTIONED #
+          ################################################
+          movie_found = False                            #
+          ################################################
+
           readable_title = movie_title
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
@@ -748,7 +795,7 @@ class Chatbot:
       return response
 
 
-    def minDistance(title1, title2):
+    def minDistance(self, title1, title2):
       len1 = len(title1)
       len2 = len(title2)
       distMatrix = []
@@ -758,17 +805,17 @@ class Chatbot:
             listNum.append(0)
         distMatrix.append(listNum)
       #distMatrix = [[0] * (len1 + 1)] * (len2 + 1)
-      print distMatrix
+      # print distMatrix
       for row in xrange(0, len2 + 1):
         for col in xrange(0, len1 + 1):
-          print title1[col - 1]
-          print title2[row - 1]
+          # print title1[col - 1]
+          # print title2[row - 1]
           if row == 0:
             distMatrix[row][col] = col
           elif col == 0:
             distMatrix[row][col] = row
           elif title1[col-1] == title2[row-1]:
-            print 'inside'
+            # print 'inside'
             distMatrix[row][col] = distMatrix[row-1][col-1]
           else:
             distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1])
