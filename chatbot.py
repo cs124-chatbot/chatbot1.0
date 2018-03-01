@@ -149,9 +149,13 @@ class Chatbot:
 
     def convert_foreignArticle(self, s):
       if len(s) >= 3:
+<<<<<<< HEAD
         foreignList = set(['i', 'de', ' das', ' les', 'las', "l'", 'un', 'det',\
           'der', 'die', 'den', 'une', 'el', 'en', 'il', 'le', 'la', 'lo', \
           'los', 'un'])
+=======
+        foreignList = set(['i', 'de', ' das', ' les', 'las', "l'", 'un', 'det', 'der', 'die', 'den', 'une', 'el', 'en', 'il', 'le', 'la', 'lo', 'los', 'un'])
+>>>>>>> d598c264802cf5410857c52fd45db7d94d6c3a57
         print s
         for article in foreignList:
           if article in s.lower() and s.lower().find(article) == 0:
@@ -263,6 +267,7 @@ class Chatbot:
           elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
             movie_title = 'Valachi Papers,The (1972)'
             movie_found = True
+<<<<<<< HEAD
           
           #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           setofArticles = []
@@ -294,6 +299,37 @@ class Chatbot:
           print set(setofArticles)
           #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           
+=======
+
+          # setofArticles = []
+          # if not movie_found:
+          #   alternate_title = 'a.k.a. ' + movie_title
+          #   paren_title = '(' + movie_title + ')'
+          #   converted_paren_title = '(' + self.convert_article(movie_title) + ')'
+          #   converted_alt_title = self.convert_article(alternate_title)
+          #   converted_foreign_title = '(' + self.convert_foreignArticle(movie_title) + ')'
+
+          #   for title in self.movie_titles:
+
+          #     if ',' in title and '(' in title:
+          #       startIndex = title.find('(')
+          #       closingIndex = title.find(')')
+          #       newStr = title[startIndex + 1:closingIndex]
+          #       if ',' in newStr:
+          #         newStr = newStr[newStr.find(',') + 1:]
+          #         setofArticles.append(newStr)
+
+          #     if alternate_title in title or converted_alt_title in title:
+          #       movie_found = True
+          #       movie_title = title
+          #       break
+          #     elif paren_title in title or converted_paren_title in title or converted_foreign_title in title:
+          #       movie_found = True
+          #       movie_title = title
+          #       break
+          # print set(setofArticles)
+
+>>>>>>> d598c264802cf5410857c52fd45db7d94d6c3a57
           if movie_found:
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             #self.movies_count += 1
