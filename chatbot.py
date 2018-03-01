@@ -105,6 +105,9 @@ class Chatbot:
       result = self.segmentWords('\n'.join(contents))
       return result
 
+    def readVagueInput(self, s):
+      
+
     def segmentWords(self, s):
       """
        * Splits lines on whitespace for file reading
