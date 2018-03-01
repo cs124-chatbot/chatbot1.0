@@ -24,6 +24,7 @@ from PorterStemmer import PorterStemmer
 #############################################################################
 
 QUOTATION_REGEX = r'\"(.*?)\"'
+ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
 
 MIN_NUM_MOVIES_NEEDED = 5
@@ -44,6 +45,7 @@ class Chatbot:
     def __init__(self, is_turbo=False):
       self.porter = PorterStemmer()
       self.movie_titles = []
+      self.no_year_titles = []
       self.name = 'Movie Bot'
       self.is_turbo = is_turbo
       self.read_data()
@@ -105,6 +107,10 @@ class Chatbot:
       f.close()
       result = self.segmentWords('\n'.join(contents))
       return result
+
+    def removeYear(self, title):
+      title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
+      return title_wo_year.strip()
 
     #def readVagueInput(self, s):
 
@@ -193,6 +199,7 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
+        print "TURBO MODE ACTIVATED"
         # Old response = 'processed %s in creative mode!!' % input
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -263,13 +270,34 @@ class Chatbot:
           readable_title = movie_title
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
-            needed_info = self.noYearProcess(movie_title)
+            results = []
+
+            converted_title_noyr = self.convert_article(movie_title)
+
+            #loop through non-year movie title list
+            for title, year in self.no_year_titles:
+              if movie_title == title:
+                movie_found = True
+                results.append((title, year))
+              elif converted_title_noyr == title:
+                movie_found = True
+                results.append((converted_title_noyr, year))
+
+            if len(results) == 1:
+              movie_title = "%s (%s)" % (results[0][0], results[0][1])
+              print movie_title
+              print ' ---- ---- ----'
+            elif len(results) > 1:
+              movie_found = False
+              return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
+
+
           elif movie_title in self.movie_titles:
             movie_found = True
           elif self.convert_article(movie_title) in self.movie_titles:
             movie_title = self.convert_article(movie_title)
             movie_found = True
-          elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
+          elif movie_title == 'The Valachi Papers (1972)' or movie_title == 'The Valachi Papers': # special case for article without a space
             movie_title = 'Valachi Papers,The (1972)'
             movie_found = True
 
@@ -283,8 +311,7 @@ class Chatbot:
 
             for title in self.movie_titles:
               lower_title = title.lower()
-              actual_year_regex = r'\([1-2][0-9]{3}\)'
-              lower_title = re.sub(actual_year_regex, '', lower_title)
+              lower_title = re.sub(ACTUAL_YEAR_REGEX, '', lower_title)
             #   if ',' in title and '(' in title:
             #     startIndex = title.find('(')
             #     closingIndex = title.find(')')
@@ -300,17 +327,15 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 break
-          print set(setofArticles)
+          # print set(setofArticles)
 
           if movie_found:
 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            print self.getMovieYear(movie_title)
-            print self.getGenresList(movie_title)
-
+            # print self.getMovieYear(movie_title)
+            # print self.getGenresList(movie_title)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
@@ -357,8 +382,8 @@ class Chatbot:
 
             if sentiment_counter > 0:
               sentiment = 'liked'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) + 1
+              # for g in self.getGenresList(movie_title):
+              #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
               for g in self.getGenresList(movie_title):
@@ -366,6 +391,19 @@ class Chatbot:
 
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
+
+            like_genre = ''
+            dislike_genre = ''
+            for genre, count in self.genres_input.iteritems():
+              if count > 2:
+                like_genre = genre
+              if count < -2:
+                dislike_genre = genre
+
+            if len(like_genre) > 0:
+              print("Wow! You seem to really like movies in the " + like_genre + " genre!")
+            if len(dislike_genre) > 0:
+              print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
 
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
@@ -524,6 +562,10 @@ class Chatbot:
       # print self.movie_inputs
       # print self.recommend_flag
       # print self.genres_input
+      #############################################################################
+      # return statement for both Turbo and Standard bots
+      #############################################################################
+
       return response
 
 
@@ -564,6 +606,11 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = [xx for [xx , genre] in self.titles]
+      #if self.is_turbo == True:
+      for title in self.movie_titles:
+        title_wo_yr = self.removeYear(title)
+        year = self.getMovieYear(title)
+        self.no_year_titles.append((title_wo_yr, year))
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
