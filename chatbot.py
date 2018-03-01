@@ -548,7 +548,7 @@ class Chatbot:
         for title in self.movie_titles:
           title_wo_yr = self.removeYear(title)
           year = self.getMovieYear(title)
-          self.no_year_titles.append((title_wo_year, year))
+          self.no_year_titles.append((title_wo_yr, year))
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
