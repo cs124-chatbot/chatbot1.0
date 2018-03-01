@@ -26,6 +26,7 @@ from PorterStemmer import PorterStemmer
 QUOTATION_REGEX = r'\"(.*?)\"'
 ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
+ROMAN_NUM_REGEX = r'^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$'
 
 MIN_NUM_MOVIES_NEEDED = 5
 # Binarize Constants
@@ -59,6 +60,7 @@ class Chatbot:
       self.bad_input_count = 0
       self.genres_input = {}
       self.carryover = ()
+      self.series_carryover = ()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -147,6 +149,26 @@ class Chatbot:
           article = commaChunk[indexComma + 1:].strip()
           if article == 'The' or article == 'A' or article == 'An':
             readable_title = article + " " + raw_title[: indexParen - (6 - indexComma)] + ' ' + raw_title[indexParen:]
+      #Fix article within parenthetical subtitles
+      
+      openParen_index = readable_title.find('(')
+      closeParen_index = readable_title.find(')')
+      if closeParen_index != -1:
+        within_paren = readable_title[openParen_index + 1: closeParen_index]
+        aka_index = within_paren.find('a.k.a.')
+        commaChunk2 = (within_paren)[-6:]
+        indexComma2 = commaChunk2.find(',')
+
+        if indexComma2 != -1:
+          article = commaChunk2[indexComma2 + 1:].strip()
+          if article == 'The' or article == 'A' or article == 'An':
+            comma_index = within_paren.find(',')
+            if aka_index != -1:
+              new_title = within_paren[:aka_index + 6] + ' ' + article + ' ' + within_paren[aka_index + 6: comma_index]
+            else:
+              new_title = article + ' ' + within_paren[:comma_index]
+            readable_title = readable_title[:openParen_index + 1] + new_title + readable_title[closeParen_index]
+
       return readable_title
 
 
@@ -201,6 +223,10 @@ class Chatbot:
         # Find movie(s) mentioned by user
         #############################################################################
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
+        
+        #############################################################################
+        # Multiple Hits No Date 
+        #############################################################################
         if self.carryover:
           curr_title = self.carryover[0][0][0]
           if ':next' in input:
@@ -226,7 +252,7 @@ class Chatbot:
                 date = self.carryover[0][num-1][1]
                 matched_movie = "%s (%s)" % (title, date)
               else: 
-                return "Hmmm . . . there aren'y that many movies called " + curr_title + ". There were only " + str(len(self.carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released! Otherwise, if you want to forget about it just tell me :next to move on."
+                return "Hmmm . . . there aren\'t that many movies called " + curr_title + ". There were only " + str(len(self.carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released! Otherwise, if you want to forget about it just tell me :next to move on."
           
           else:
             return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
@@ -240,7 +266,53 @@ class Chatbot:
           self.carryover = ()
           movie_title = matched_movie
           self.movie_inputs[movie_title] = float(sent / abs(sent))
+        
+        #############################################################################
+        # Series 
+        #############################################################################
+        elif self.series_carryover:
+          if ':next' in input:
+            self.series_carryover = ()
+            return "Okay, let's move on. What other movies have you seen?"
+   
+          matched_movie = ''
+          year_matches = re.findall('[1-2][0-9]{3}', input)
+          if len(year_matches) >= 1:
+            year = year_matches[len(year_matches) - 1]
+            for title, date in self.series_carryover[0]:
+              if year == date:
+                matched_movie = "%s (%s)" % (title, date)           
+            if matched_movie == '':
+              return "Hmm. . . none of the movies in that series were released in " + year + ". Maybe you're mistaken . . .could you try again? If it\'s easier you could also just tell me what number it was chronologically or its subtitle! Also, to move on, just tell me :next."
+          
+          elif len(input.strip()) <= 2 and input != '0':
+            num_match = re.findall('[0-9][0-9]?', input)
+            if len(num_match) >= 1:
+              num = int(num_match[0])
+              if len(self.series_carryover[0]) >= num:
+                title = self.series_carryover[0][num-1][0]
+                date = self.series_carryover[0][num-1][1]
+                matched_movie = "%s (%s)" % (title, date)
+            if matched_movie == '': 
+              return "Oops, there aren\'t that many movies in that series. There were only " + str(len(self.series_carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released or its subtitle! Otherwise, if you want to forget about it just tell me :next to move on."
+          
+          else:
+            for title, date in self.series_carryover[0]:
+              if input in title:
+                matched_movie = "%s (%s)" % (title, date)  
+            if matched_movie == '':
+              return "Sorry, that doesn't sound like one of the subtitles of this series. Want to try another? Remember, you can also tell me the date it was released or it's number in the series. Alternatively, tell me :next , and we can move on."
+          sent = self.series_carryover[1]
+          if sent >= 0:
+            sentiment = 'liked'
+          else:
+            sentiment = 'didn\'t like'
 
+          response = 'Oh I see! You ' + sentiment + ' \"' + matched_movie + '\". Thanks for bearing with me. Let\'s continue! Tell me about more movies you\'ve seen.'
+          self.series_carryover = ()
+          movie_title = matched_movie
+          self.movie_inputs[movie_title] = float(sent / abs(sent))
+          
         #############################################################################
         # User wants additional recommendations
         #############################################################################
@@ -330,8 +402,10 @@ class Chatbot:
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
             results = []
+            series_results = []
 
             converted_title_noyr = self.convert_article(movie_title)
+            series_title_regex = (movie_title + r'[ ]?:') + r'|' + (movie_title + r' and ') + r'|' + (r':[ ]?' + movie_title) + r'|' + (movie_title + r' [0-9]+') + r'|' + (movie_title + ROMAN_NUM_REGEX)
 
             #loop through non-year movie title list
             for title, year in self.no_year_titles:
@@ -344,6 +418,12 @@ class Chatbot:
               elif movie_title == 'The Valachi Papers':
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
+              #Checks for Series
+              else:
+                series_matches = re.findall(series_title_regex, title)
+                series_alt_matches = re.findall(series_title_regex, self.reverse_convert_article(title))
+                if len(series_matches) >= 1 or len(series_alt_matches) >= 1:
+                  series_results.append((title, year))
               '''
               alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
               paren_title = '(' + movie_title.lower() + ')'
@@ -368,16 +448,16 @@ class Chatbot:
                 movie_title = title
                 results.append((title, year))
             '''
-            if len(results) == 1:
+            if len(series_results) > 0:
+              full_results = sorted(results + list(set(series_results) - set(results)), key=itemgetter(1))
+              movie_found = True
+              self.series_carryover = (full_results, 0)
+            elif len(results) == 1:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
-              print movie_title
-              print ' ---- ---- ----'
             elif len(results) > 1: 
               results = sorted(results, key=itemgetter(1))
               movie_found = True
               self.carryover = (results, 0)
-              #return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
-
 
           elif movie_title in self.movie_titles:
             movie_found = True
@@ -484,6 +564,12 @@ class Chatbot:
               num_options = len(self.carryover[0])
               ex_date = self.carryover[0][1][1]
               return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
+            if self.series_carryover:
+              self.series_carryover = (self.series_carryover[0], sentiment_counter)
+              response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
+              for movie, yr in self.series_carryover[0]:
+                response = response + "\n" + movie + " (" + yr + ")" 
+              return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
 
             like_genre = ''
             dislike_genre = ''
