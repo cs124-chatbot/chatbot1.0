@@ -271,18 +271,25 @@ class Chatbot:
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
             results = []
+
+            converted_title_noyr = self.convert_article(movie_title) 
+
+            #loop through non-year movie title list
             for title, year in self.no_year_titles:
               if movie_title == title:
                 movie_found = True
                 results.append((title, year))
+              elif converted_title_noyr == title:
+                movie_found = True
+                results.append((converted_title_noyr, year))
             
             if len(results) == 1:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
               print movie_title
+              print ' ---- ---- ----'
             elif len(results) > 1: 
-              print 'MORE THAN ONE MATCH IMPLEMENT FIX'
               movie_found = False
-
+              return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
 
 
           elif movie_title in self.movie_titles:
@@ -290,7 +297,7 @@ class Chatbot:
           elif self.convert_article(movie_title) in self.movie_titles:
             movie_title = self.convert_article(movie_title)
             movie_found = True
-          elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
+          elif movie_title == 'The Valachi Papers (1972)' or movie_title == 'The Valachi Papers': # special case for article without a space
             movie_title = 'Valachi Papers,The (1972)'
             movie_found = True
 
