@@ -28,6 +28,7 @@ ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
 
 MIN_NUM_MOVIES_NEEDED = 5
+EDIT_DIST_THRESHOLD = 3
 # Binarize Constants
 UPPER_THRESHOLD = 3.1
 LOWER_THRESHOLD = 2.9
@@ -202,31 +203,31 @@ class Chatbot:
           if ':next' in input:
             self.carryover = ()
             return "Okay! We can forget about " + curr_title + "! What other movies have you seen?"
-   
+
           matched_movie = ''
           year_matches = re.findall('[1-2][0-9]{3}', input)
           if len(year_matches) >= 1:
             year = year_matches[len(year_matches) - 1]
             for title, date in self.carryover[0]:
               if year == date:
-                matched_movie = "%s (%s)" % (title, date)           
+                matched_movie = "%s (%s)" % (title, date)
             if matched_movie == '':
               return "Ah geez, this is embarassing. I don't think there was a movie called " + curr_title + " released in " + year + ". Maybe you're mistaken . . .could you try again? If it\'s easier you could also just tell me what number it was chronologically! Also, if you're tired of talking about " + curr_title + ", just tell me :next to move on."
-          
+
           elif len(input.strip()) == 1 and input != '0':
-            num_match = re.findall('[0-9]', input) 
+            num_match = re.findall('[0-9]', input)
             if len(num_match) >= 1:
               num = int(num_match[0])
               if len(self.carryover[0]) >= num:
                 title = self.carryover[0][num-1][0]
                 date = self.carryover[0][num-1][1]
                 matched_movie = "%s (%s)" % (title, date)
-              else: 
+              else:
                 return "Hmmm . . . there aren'y that many movies called " + curr_title + ". There were only " + str(len(self.carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released! Otherwise, if you want to forget about it just tell me :next to move on."
-          
+
           else:
             return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
-          
+
           if self.carryover[1] >= 0:
             sentiment = 'liked'
           else:
@@ -318,6 +319,12 @@ class Chatbot:
               elif movie_title == 'The Valachi Papers':
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
+              elif self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
+                movie_found = True
+                results.append((title, year))
+              elif self.minDistance(converted_title_noyr, title) < EDIT_DIST_THRESHOLD:
+                movie_found = True
+                results.append((title, year))
               '''
               alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
               paren_title = '(' + movie_title.lower() + ')'
@@ -346,7 +353,7 @@ class Chatbot:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
               print movie_title
               print ' ---- ---- ----'
-            elif len(results) > 1: 
+            elif len(results) > 1:
               results = sorted(results, key=itemgetter(1))
               movie_found = True
               self.carryover = (results, 0)
@@ -373,6 +380,27 @@ class Chatbot:
             for title in self.movie_titles:
               lower_title = title.lower()
               lower_title = re.sub(ACTUAL_YEAR_REGEX, '', lower_title)
+              if self.minDistance(lower_title, movie_title.lower()) < EDIT_DIST_THRESHOLD:
+                movie_found = True
+                movie_title = title
+                break
+
+              posTitles = re.findall(YEAR_REGEX, lower_title) #hacky regex to get just titles
+              for posTitle in posTitles:
+                posTitle = '(' + posTitle + ')'
+                if self.minDistance(posTitle, alternate_title) < EDIT_DIST_THRESHOLD:
+                  movie_found = True
+                  movie_title = title
+                elif self.minDistance(posTitle, paren_title) < EDIT_DIST_THRESHOLD:
+                  movie_found = True
+                  movie_title = title
+                elif self.minDistance(posTitle, converted_paren_title) < EDIT_DIST_THRESHOLD:
+                  movie_found = True
+                  movie_title = title
+                elif self.minDistance(posTitle, converted_alt_title) < EDIT_DIST_THRESHOLD:
+                  movie_found = True
+                  movie_title = title
+
             #   if ',' in title and '(' in title:
             #     startIndex = title.find('(')
             #     closingIndex = title.find(')')
@@ -635,8 +663,8 @@ class Chatbot:
 
       return response
 
-
-    def minDistance(title1, title2):
+    #returns minimum editDistance between two strings
+    def minDistance(self, title1, title2):
       len1 = len(title1)
       len2 = len(title2)
       distMatrix = []
@@ -645,21 +673,16 @@ class Chatbot:
         for j in range(0, len1 + 1):
             listNum.append(0)
         distMatrix.append(listNum)
-      #distMatrix = [[0] * (len1 + 1)] * (len2 + 1)
-      print distMatrix
       for row in xrange(0, len2 + 1):
         for col in xrange(0, len1 + 1):
-          print title1[col - 1]
-          print title2[row - 1]
           if row == 0:
             distMatrix[row][col] = col
           elif col == 0:
             distMatrix[row][col] = row
           elif title1[col-1] == title2[row-1]:
-            print 'inside'
             distMatrix[row][col] = distMatrix[row-1][col-1]
           else:
-            distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1])
+            distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1] + 1)
       return distMatrix[len2][len1]
 
     #############################################################################
