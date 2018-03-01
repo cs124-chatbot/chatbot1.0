@@ -196,7 +196,7 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         print "TURBO MODE ACTIVATED"
-        print self.movie_inputs
+        # print self.movie_inputs
         # Old response = 'processed %s in creative mode!!' % input
 
         #############################################################################
@@ -260,7 +260,7 @@ class Chatbot:
         # User did not mention a movie in QUOTES
         #############################################################################
         elif len(movies_mentioned) == 0:
-
+          self.potential_titles = []
           all_potential_titles = []
           capitalized_phrases = re.findall(CAPITALIZED_PHRASE, input)
           # print 'capitalized_phrases:'
@@ -288,7 +288,8 @@ class Chatbot:
                 for no_yr_title, year in self.no_year_titles:
                   edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
                   if edit_distance == 0:
-                    self.potential_titles.append((no_yr_title, edit_distance))
+                    real_title = no_yr_title + " (" + year + ")"
+                    self.potential_titles.append((real_title, edit_distance))
               else:
                 for real_title in self.movie_titles:
                   edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
@@ -296,9 +297,12 @@ class Chatbot:
                     self.potential_titles.append((real_title, edit_distance))
 
             # Then sort by highest length of match
-            self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
-            best_match_unquoted = self.potential_titles[0][0]
-            response = "I think you're talking about \"" + best_match_unquoted + "\". What did you think of \"" + best_match_unquoted + "\"?"
+            if len(self.potential_titles) > 0:
+              self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
+              best_match_unquoted = self.potential_titles[0][0]
+              response = "I think you're talking about \"" + best_match_unquoted + "\". What did you think of \"" + best_match_unquoted + "\"?"
+            else:
+              response = "Sorry. Didn't quite get that. Tell me about a movie that you've seen."
 
           elif self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
@@ -323,8 +327,8 @@ class Chatbot:
           #############################################################################
           elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
             possible_responses = [
-              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
-              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen.',
+              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen.',
               'I know I\'m supposed to be a smart bot... but in order for me to make good recommendations, I need you to tell me a few more movies that you\'ve seen. Thanks!'
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
