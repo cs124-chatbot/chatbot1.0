@@ -64,13 +64,9 @@ class Chatbot:
       self.carryover = ()
       self.series_carryover = ()
       self.potential_titles = []
-<<<<<<< HEAD
-      self.no_quote_carryover = ()
-=======
       self.emotionDict = {}
       self.setupEmotion()
->>>>>>> 5679e93adad9b2ad8d15a74ffda1b558dd1f9952
-
+      
     #############################################################################
     # 1. WARM UP REPL
     #############################################################################
