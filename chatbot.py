@@ -484,10 +484,24 @@ class Chatbot:
     #############################################################################
     def intro(self):
       return """
-      Your task is to implement the chatbot as detailed in the PA6 instructions.
-      Remember: in the starter mode, movie names will come in quotation marks and
-      expressions of sentiment will be simple!
-      Write here the description for your own chatbot!
+      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system. 
+      This virtual cinephile hit their head as a child and sometimes gets confused that they are a 
+      British secret agent. Nevertheless, Movie Bot will help you will all your movie recommendation needs.
+
+      Movie Bot exists in two modes.
+      1. Standard Mode:
+      In Movie Bot's standard mode, they will ask you about your movie preferences.
+      After you give at least 5 unique movie preferences, specifically formatted to the standard mode
+      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation. 
+      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)". 
+
+      2. Creative Mode: 
+      In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
+      Movie Bot's enhanced capabilities are:
+        1. 
+        2. 
+        3. 
+        
       """
 
 
