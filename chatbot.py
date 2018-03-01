@@ -646,7 +646,7 @@ class Chatbot:
                     else:
                       emotion_counter[emotion] += 1
                     break
-
+              print emotion_counter
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
