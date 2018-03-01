@@ -111,6 +111,20 @@ class Chatbot:
       """
       return s.split()
 
+    def getMovieYear(self, title):
+      paren_matches = re.findall(YEAR_REGEX, title)
+      year = ''
+      if len(paren_matches) >= 1:
+        year = paren_matches[len(paren_matches) - 1]
+      return year
+
+    def getGenresList(self, title):
+      movie_index = self.movie_titles.index(title)
+      movie_obj = self.titles[movie_index]
+      genre_obj = movie_obj[1]
+      genresList = genre_obj.split('|')
+      return genresList
+
     def reverse_convert_article(self, raw_title):
       readable_title = raw_title
       if raw_title == "Valachi Papers,The (1972)":
@@ -239,17 +253,6 @@ class Chatbot:
           movie_title = input[quote_start + 1 : quote_end - 1]
           input_movie_removed = input[:quote_start] + input[quote_end:]
 
-          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          # Creative
-          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          paren_matches = re.findall(YEAR_REGEX, input)
-          year = ''
-          if len(paren_matches) >= 1:
-            year = paren_matches[len(paren_matches) - 1]
-          print 'year: %s' % year
-
-          #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
           movie_found = False
           readable_title = movie_title
           # Check to see if movie title is known
@@ -291,6 +294,16 @@ class Chatbot:
           # print set(setofArticles)
 
           if movie_found:
+
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Creative
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            print self.getMovieYear(movie_title)
+            print self.getGenresList(movie_title)
+
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             #self.movies_count += 1
             sentiment = 'liked'
