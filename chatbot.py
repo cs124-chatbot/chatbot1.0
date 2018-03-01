@@ -217,8 +217,6 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
-        print "TURBO MODE ACTIVATED"
-        print self.movie_inputs
         # Old response = 'processed %s in creative mode!!' % input
 
         #############################################################################
@@ -471,7 +469,7 @@ class Chatbot:
                 series_alt_matches = re.findall(series_title_regex, self.reverse_convert_article(title))
                 if len(series_matches) >= 1 or len(series_alt_matches) >= 1:
                   series_results.append((title, year))
-              '''
+              
               alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
               paren_title = '(' + movie_title.lower() + ')'
               converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
@@ -494,8 +492,8 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 results.append((title, year))
-            '''
-            if len(series_results) > 0:
+            
+            if len(series_results) > 1:
               full_results = sorted(results + list(set(series_results) - set(results)), key=itemgetter(1))
               movie_found = True
               self.series_carryover = (full_results, 0)
@@ -970,10 +968,14 @@ class Chatbot:
       2. Creative Mode:
       In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
       Movie Bot's enhanced capabilities are:
-        1.
-        2.
-        3.
-
+        1. Movie Bot doesn't need the year of the movie you're talking about.
+        2. When there are disambiguities about the movie you were talking about, either because it's part of a series or there are multilpe movies with that title, Movie Bot will prompt you to clarify. (Rubric #4)
+        3. Movie Bot doesn't need you to enter an exact movie title (without spelling erros) in quotations or with perfect capitalization. (Rubric #1)
+        4. Movie Bot speaks english much more fluently. (Rubric #9)
+        5. Movie Bot can identify alternate movie titles and foreign movie titles, even with foregin articles. (Rubric #11)
+        6. Movie Bot can spell check titles that are within quotes, even without the year (within reason). (Rubric #3)
+        7. Movie Bot will respond accordingly if you tell them how you are feeling. (Rubric #6)
+        8. Movie Bot recognizes if you like a lot of movies of the same genre and will comment on this fact.
       """
 
 
