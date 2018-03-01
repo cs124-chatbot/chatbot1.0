@@ -264,35 +264,36 @@ class Chatbot:
             movie_found = True
           elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
             movie_title = 'Valachi Papers,The (1972)'
-            movie_found = True    
-          
-          # setofArticles = []
-          # if not movie_found:
-          #   alternate_title = 'a.k.a. ' + movie_title
-          #   paren_title = '(' + movie_title + ')'
-          #   converted_paren_title = '(' + self.convert_article(movie_title) + ')'
-          #   converted_alt_title = self.convert_article(alternate_title)
-          #   converted_foreign_title = '(' + self.convert_foreignArticle(movie_title) + ')'
+            movie_found = True
 
-          #   for title in self.movie_titles:
+          setofArticles = []
+          if not movie_found:
+            alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
+            paren_title = '(' + movie_title.lower() + ')'
+            converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
+            converted_alt_title = '(a.k.a. ' + self.convert_article(alternate_title).lower() + ')'
+            converted_foreign_title = '(' + self.convert_foreignArticle(movie_title).lower() + ')'
 
-          #     if ',' in title and '(' in title:
-          #       startIndex = title.find('(')
-          #       closingIndex = title.find(')')
-          #       newStr = title[startIndex + 1:closingIndex]
-          #       if ',' in newStr:
-          #         newStr = newStr[newStr.find(',') + 1:]
-          #         setofArticles.append(newStr)
-
-          #     if alternate_title in title or converted_alt_title in title:
-          #       movie_found = True
-          #       movie_title = title
-          #       break
-          #     elif paren_title in title or converted_paren_title in title or converted_foreign_title in title:
-          #       movie_found = True
-          #       movie_title = title
-          #       break
-          # print set(setofArticles)
+            for title in self.movie_titles:
+              lower_title = title.lower()
+              actual_year_regex = r'\([1-2][0-9]{3}\)'
+              lower_title = re.sub(actual_year_regex, '', lower_title)
+            #   if ',' in title and '(' in title:
+            #     startIndex = title.find('(')
+            #     closingIndex = title.find(')')
+            #     newStr = title[startIndex + 1:closingIndex]
+            #     if ',' in newStr:
+            #       newStr = newStr[newStr.find(',') + 1:]
+            #       setofArticles.append(newStr)
+              if alternate_title in lower_title or converted_alt_title in lower_title:
+                movie_found = True
+                movie_title = title
+                break
+              elif paren_title in lower_title or converted_paren_title in lower_title or converted_foreign_title in lower_title:
+                movie_found = True
+                movie_title = title
+                break
+          print set(setofArticles)
 
           if movie_found:
 
