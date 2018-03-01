@@ -110,8 +110,8 @@ class Chatbot:
 
     def noYearProcess(self, movie_title):
       print movie_title
-      
-      pass  
+
+      pass
 
     def segmentWords(self, s):
       """
@@ -307,7 +307,7 @@ class Chatbot:
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
+
             print self.getMovieYear(movie_title)
             print self.getGenresList(movie_title)
 
@@ -363,7 +363,7 @@ class Chatbot:
               sentiment = 'didn\'t like'
               for g in self.getGenresList(movie_title):
                 self.genres_input[g] = self.genres_input.get(g, 0) - 1
-                
+
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
@@ -381,7 +381,7 @@ class Chatbot:
       # DO NOT CHANGE BELOW FOR CREATIVE MODE
       # CREATIVE MODE ABOVE THIS LINE
       # -----------------------------------------
-      
+
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -527,6 +527,32 @@ class Chatbot:
       return response
 
 
+    def minDistance(title1, title2):
+      len1 = len(title1)
+      len2 = len(title2)
+      distMatrix = []
+      for i in range(0, len2 + 1):
+        listNum = []
+        for j in range(0, len1 + 1):
+            listNum.append(0)
+        distMatrix.append(listNum)
+      #distMatrix = [[0] * (len1 + 1)] * (len2 + 1)
+      print distMatrix
+      for row in xrange(0, len2 + 1):
+        for col in xrange(0, len1 + 1):
+          print title1[col - 1]
+          print title2[row - 1]
+          if row == 0:
+            distMatrix[row][col] = col
+          elif col == 0:
+            distMatrix[row][col] = row
+          elif title1[col-1] == title2[row-1]:
+            print 'inside'
+            distMatrix[row][col] = distMatrix[row-1][col-1]
+          else:
+            distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1])
+      return distMatrix[len2][len1]
+
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
@@ -657,24 +683,24 @@ class Chatbot:
     #############################################################################
     def intro(self):
       return """
-      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system. 
-      This virtual cinephile hit their head as a child and sometimes gets confused that they are a 
+      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system.
+      This virtual cinephile hit their head as a child and sometimes gets confused that they are a
       British secret agent. Nevertheless, Movie Bot will help you will all your movie recommendation needs.
 
       Movie Bot exists in two modes.
       1. Standard Mode:
       In Movie Bot's standard mode, they will ask you about your movie preferences.
       After you give at least 5 unique movie preferences, specifically formatted to the standard mode
-      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation. 
-      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)". 
+      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation.
+      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)".
 
-      2. Creative Mode: 
+      2. Creative Mode:
       In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
       Movie Bot's enhanced capabilities are:
-        1. 
-        2. 
-        3. 
-        
+        1.
+        2.
+        3.
+
       """
 
 
