@@ -110,7 +110,7 @@ class Chatbot:
 
     def removeYear(self, title):  
       title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
-      return title_wo_year
+      return title_wo_year.strip()
 
     #def readVagueInput(self, s):
 
@@ -199,6 +199,7 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
+        print "TURBO MODE ACTIVATED"
         # Old response = 'processed %s in creative mode!!' % input
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -269,7 +270,21 @@ class Chatbot:
           readable_title = movie_title
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
-            needed_info = self.noYearProcess(movie_title)
+            results = []
+            for title, year in self.no_year_titles:
+              if movie_title == title:
+                movie_found = True
+                results.append((title, year))
+            
+            if len(results) == 1:
+              movie_title = "%s (%s)" % (results[0][0], results[0][1])
+              print movie_title
+            elif len(results) > 1: 
+              print 'MORE THAN ONE MATCH IMPLEMENT FIX'
+              movie_found = False
+
+
+
           elif movie_title in self.movie_titles:
             movie_found = True
           elif self.convert_article(movie_title) in self.movie_titles:
@@ -314,7 +329,7 @@ class Chatbot:
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             print self.getMovieYear(movie_title)
-            print self.getGenresList(movie_title)
+            #print self.getGenresList(movie_title)
 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -362,12 +377,12 @@ class Chatbot:
 
             if sentiment_counter > 0:
               sentiment = 'liked'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) + 1
+              # for g in self.getGenresList(movie_title):
+              #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) - 1
+              # for g in self.getGenresList(movie_title):
+              #   self.genres_input[g] = self.genres_input.get(g, 0) - 1
                 
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
@@ -543,12 +558,11 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = [xx for [xx , genre] in self.titles]
-      if self.is_turbo == True:
-  
-        for title in self.movie_titles:
-          title_wo_yr = self.removeYear(title)
-          year = self.getMovieYear(title)
-          self.no_year_titles.append((title_wo_yr, year))
+      #if self.is_turbo == True:
+      for title in self.movie_titles:
+        title_wo_yr = self.removeYear(title)
+        year = self.getMovieYear(title)
+        self.no_year_titles.append((title_wo_yr, year))
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
