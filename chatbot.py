@@ -328,13 +328,8 @@ class Chatbot:
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-<<<<<<< HEAD
-            print self.getMovieYear(movie_title)
-            #print self.getGenresList(movie_title)
-=======
             # print self.getMovieYear(movie_title)
             # print self.getGenresList(movie_title)
->>>>>>> 4dd35ee73b51ae084fc7839e45deb62df2678c4e
 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -386,15 +381,9 @@ class Chatbot:
               #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
-<<<<<<< HEAD
-              # for g in self.getGenresList(movie_title):
-              #   self.genres_input[g] = self.genres_input.get(g, 0) - 1
-                
-=======
               for g in self.getGenresList(movie_title):
                 self.genres_input[g] = self.genres_input.get(g, 0) - 1
 
->>>>>>> 4dd35ee73b51ae084fc7839e45deb62df2678c4e
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
