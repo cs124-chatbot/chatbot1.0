@@ -109,16 +109,23 @@ class Chatbot:
       result = self.segmentWords('\n'.join(contents))
       return result
 
-    def removeYear(self, title):  
+    def removeYear(self, title):
       title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
       return title_wo_year.strip()
 
     #def readVagueInput(self, s):
 
+<<<<<<< HEAD
     # def noYearProcess(self, movie_title):
     #   print movie_title
       
     #   pass  
+=======
+    def noYearProcess(self, movie_title):
+      print movie_title
+
+      pass
+>>>>>>> 7b0eb7716af8ed3d755c195e76b0718d4579c2a0
 
     def segmentWords(self, s):
       """
@@ -179,12 +186,10 @@ class Chatbot:
     def convert_foreignArticle(self, s):
       if len(s) >= 3:
         foreignList = set(['i', 'de', ' das', ' les', 'las', "l'", 'un', 'det', 'der', 'die', 'den', 'une', 'el', 'en', 'il', 'le', 'la', 'lo', 'los', 'un'])
-        print s
         for article in foreignList:
           if article in s.lower() and s.lower().find(article) == 0:
             s = s[len(article):]
             s += ', ' + article.capitalize() + ' '
-            print s
             break
       return s.strip()
 
@@ -312,7 +317,7 @@ class Chatbot:
           if self.getMovieYear(movie_title) is '':
             results = []
 
-            converted_title_noyr = self.convert_article(movie_title) 
+            converted_title_noyr = self.convert_article(movie_title)
 
             #loop through non-year movie title list
             for title, year in self.no_year_titles:
@@ -322,16 +327,48 @@ class Chatbot:
               elif converted_title_noyr == title:
                 movie_found = True
                 results.append((converted_title_noyr, year))
-            
+              elif movie_title == 'The Valachi Papers':
+                movie_found = True
+                results.append(('Valachi Papers,The', '1972'))
+              '''
+              alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
+              paren_title = '(' + movie_title.lower() + ')'
+              converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
+              converted_alt_title = '(a.k.a. ' + self.convert_article(alternate_title).lower() + ')'
+              converted_foreign_title = '(' + self.convert_foreignArticle(movie_title).lower() + ')'
+
+              lower_title = title.lower()
+              #   if ',' in title and '(' in title:
+              #     startIndex = title.find('(')
+              #     closingIndex = title.find(')')
+              #     newStr = title[startIndex + 1:closingIndex]
+              #     if ',' in newStr:
+              #       newStr = newStr[newStr.find(',') + 1:]
+              #       setofArticles.append(newStr)
+              if alternate_title in lower_title or converted_alt_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+              elif paren_title in lower_title or converted_paren_title in lower_title or converted_foreign_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+            '''
             if len(results) == 1:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
               print movie_title
               print ' ---- ---- ----'
+<<<<<<< HEAD
             elif len(results) > 1: 
               results = sorted(results, key=itemgetter(1))
               movie_found = True
               self.carryover = (results, 0)
               #return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
+=======
+            elif len(results) > 1:
+              movie_found = False
+              return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
+>>>>>>> 7b0eb7716af8ed3d755c195e76b0718d4579c2a0
 
 
           elif movie_title in self.movie_titles:
@@ -376,10 +413,8 @@ class Chatbot:
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
             # print self.getMovieYear(movie_title)
             # print self.getGenresList(movie_title)
-
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
@@ -449,7 +484,7 @@ class Chatbot:
                 like_genre = genre
               if count < -2:
                 dislike_genre = genre
-                
+
             if len(like_genre) > 0:
               print("Wow! You seem to really like movies in the " + like_genre + " genre!")
             if len(dislike_genre) > 0:
@@ -469,7 +504,7 @@ class Chatbot:
       # DO NOT CHANGE BELOW FOR CREATIVE MODE
       # CREATIVE MODE ABOVE THIS LINE
       # -----------------------------------------
-      
+
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -619,6 +654,32 @@ class Chatbot:
       return response
 
 
+    def minDistance(title1, title2):
+      len1 = len(title1)
+      len2 = len(title2)
+      distMatrix = []
+      for i in range(0, len2 + 1):
+        listNum = []
+        for j in range(0, len1 + 1):
+            listNum.append(0)
+        distMatrix.append(listNum)
+      #distMatrix = [[0] * (len1 + 1)] * (len2 + 1)
+      print distMatrix
+      for row in xrange(0, len2 + 1):
+        for col in xrange(0, len1 + 1):
+          print title1[col - 1]
+          print title2[row - 1]
+          if row == 0:
+            distMatrix[row][col] = col
+          elif col == 0:
+            distMatrix[row][col] = row
+          elif title1[col-1] == title2[row-1]:
+            print 'inside'
+            distMatrix[row][col] = distMatrix[row-1][col-1]
+          else:
+            distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1])
+      return distMatrix[len2][len1]
+
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
@@ -754,24 +815,24 @@ class Chatbot:
     #############################################################################
     def intro(self):
       return """
-      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system. 
-      This virtual cinephile hit their head as a child and sometimes gets confused that they are a 
+      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system.
+      This virtual cinephile hit their head as a child and sometimes gets confused that they are a
       British secret agent. Nevertheless, Movie Bot will help you will all your movie recommendation needs.
 
       Movie Bot exists in two modes.
       1. Standard Mode:
       In Movie Bot's standard mode, they will ask you about your movie preferences.
       After you give at least 5 unique movie preferences, specifically formatted to the standard mode
-      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation. 
-      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)". 
+      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation.
+      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)".
 
-      2. Creative Mode: 
+      2. Creative Mode:
       In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
       Movie Bot's enhanced capabilities are:
-        1. 
-        2. 
-        3. 
-        
+        1.
+        2.
+        3.
+
       """
 
 
