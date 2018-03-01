@@ -55,6 +55,7 @@ class Chatbot:
       self.mag_u_count = 0
       self.mag_v_count = 0
       self.bad_input_count = 0
+      self.genres_input = {}
 
     #############################################################################
     # 1. WARM UP REPL
@@ -540,8 +541,12 @@ class Chatbot:
 
             if sentiment_counter > 0:
               sentiment = 'liked'
+              for g in self.getGenresList(movie_title):
+                self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
+              for g in self.getGenresList(movie_title):
+                self.genres_input[g] = self.genres_input.get(g, 0) - 1
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
@@ -556,6 +561,7 @@ class Chatbot:
 
       # print self.movie_inputs
       # print self.recommend_flag
+      # print self.genres_input
       return response
 
 
