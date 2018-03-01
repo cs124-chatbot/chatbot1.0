@@ -24,6 +24,7 @@ from PorterStemmer import PorterStemmer
 #############################################################################
 
 QUOTATION_REGEX = r'\"(.*?)\"'
+ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
 
 MIN_NUM_MOVIES_NEEDED = 5
@@ -44,6 +45,7 @@ class Chatbot:
     def __init__(self, is_turbo=False):
       self.porter = PorterStemmer()
       self.movie_titles = []
+      self.no_year_titles = []
       self.name = 'Movie Bot'
       self.is_turbo = is_turbo
       self.read_data()
@@ -105,6 +107,10 @@ class Chatbot:
       f.close()
       result = self.segmentWords('\n'.join(contents))
       return result
+
+    def removeYear(self, title):  
+      title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
+      return title_wo_year
 
     #def readVagueInput(self, s):
 
@@ -283,8 +289,7 @@ class Chatbot:
 
             for title in self.movie_titles:
               lower_title = title.lower()
-              actual_year_regex = r'\([1-2][0-9]{3}\)'
-              lower_title = re.sub(actual_year_regex, '', lower_title)
+              lower_title = re.sub(ACTUAL_YEAR_REGEX, '', lower_title)
             #   if ',' in title and '(' in title:
             #     startIndex = title.find('(')
             #     closingIndex = title.find(')')
@@ -554,6 +559,12 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = [xx for [xx , genre] in self.titles]
+      if self.is_turbo == True:
+  
+        for title in self.movie_titles:
+          title_wo_yr = self.removeYear(title)
+          year = self.getMovieYear(title)
+          self.no_year_titles.append((title_wo_yr, year))
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
