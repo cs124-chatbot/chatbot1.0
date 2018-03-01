@@ -193,7 +193,7 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
-        response = 'processed %s in creative mode!!' % input
+        # Old response = 'processed %s in creative mode!!' % input
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
@@ -446,9 +446,7 @@ class Chatbot:
           movie_found = False
           readable_title = movie_title
           # Check to see if movie title is known
-          if self.getMovieYear(movie_title) is '':
-            needed_info = self.noYearProcess(movie_title)
-          elif movie_title in self.movie_titles:
+          if movie_title in self.movie_titles:
             movie_found = True
           elif self.convert_article(movie_title) in self.movie_titles:
             movie_title = self.convert_article(movie_title)
@@ -484,18 +482,9 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 break
-          print set(setofArticles)
+          #print set(setofArticles)
 
           if movie_found:
-
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Creative
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            print self.getMovieYear(movie_title)
-            print self.getGenresList(movie_title)
-
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             #self.movies_count += 1
