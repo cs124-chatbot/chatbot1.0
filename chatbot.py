@@ -613,8 +613,6 @@ class Chatbot:
               self.series_carryover = (full_results, 0)
             elif len(results) == 1:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
-              print movie_title
-              print ' ---- ---- ----'
             elif len(results) > 1:
               results = sorted(results, key=itemgetter(1))
               movie_found = True
