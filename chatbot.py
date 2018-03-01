@@ -379,6 +379,7 @@ class Chatbot:
                 like_genre = genre
               if count < -2:
                 dislike_genre = genre
+                
             if len(like_genre) > 0:
               print("Wow! You seem to really like movies in the " + like_genre + " genre!")
             if len(dislike_genre) > 0:
