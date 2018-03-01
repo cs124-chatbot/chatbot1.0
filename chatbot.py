@@ -58,6 +58,7 @@ class Chatbot:
       self.mag_v_count = 0
       self.bad_input_count = 0
       self.genres_input = {}
+      self.carryover = ()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -108,16 +109,11 @@ class Chatbot:
       result = self.segmentWords('\n'.join(contents))
       return result
 
-    def removeYear(self, title):  
+    def removeYear(self, title):
       title_wo_year = re.sub(ACTUAL_YEAR_REGEX, '', title)
-      return title_wo_year
+      return title_wo_year.strip()
 
     #def readVagueInput(self, s):
-
-    def noYearProcess(self, movie_title):
-      print movie_title
-      
-      pass  
 
     def segmentWords(self, s):
       """
@@ -178,12 +174,10 @@ class Chatbot:
     def convert_foreignArticle(self, s):
       if len(s) >= 3:
         foreignList = set(['i', 'de', ' das', ' les', 'las', "l'", 'un', 'det', 'der', 'die', 'den', 'une', 'el', 'en', 'il', 'le', 'la', 'lo', 'los', 'un'])
-        print s
         for article in foreignList:
           if article in s.lower() and s.lower().find(article) == 0:
             s = s[len(article):]
             s += ', ' + article.capitalize() + ' '
-            print s
             break
       return s.strip()
 
@@ -199,10 +193,50 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
+        print "TURBO MODE ACTIVATED"
         # Old response = 'processed %s in creative mode!!' % input
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
-        if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
+        if self.carryover:
+          curr_title = self.carryover[0][0][0]
+          if ':next' in input:
+            self.carryover = ()
+            return "Okay! We can forget about " + curr_title + "! What other movies have you seen?"
+   
+          matched_movie = ''
+          year_matches = re.findall('[1-2][0-9]{3}', input)
+          if len(year_matches) >= 1:
+            year = year_matches[len(year_matches) - 1]
+            for title, date in self.carryover[0]:
+              if year == date:
+                matched_movie = "%s (%s)" % (title, date)           
+            if matched_movie == '':
+              return "Ah geez, this is embarassing. I don't think there was a movie called " + curr_title + " released in " + year + ". Maybe you're mistaken . . .could you try again? If it\'s easier you could also just tell me what number it was chronologically! Also, if you're tired of talking about " + curr_title + ", just tell me :next to move on."
+          
+          elif len(input.strip()) == 1 and input != '0':
+            num_match = re.findall('[0-9]', input) 
+            if len(num_match) >= 1:
+              num = int(num_match[0])
+              if len(self.carryover[0]) >= num:
+                title = self.carryover[0][num-1][0]
+                date = self.carryover[0][num-1][1]
+                matched_movie = "%s (%s)" % (title, date)
+              else: 
+                return "Hmmm . . . there aren'y that many movies called " + curr_title + ". There were only " + str(len(self.carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released! Otherwise, if you want to forget about it just tell me :next to move on."
+          
+          else:
+            return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
+          
+          if self.carryover[1] >= 0:
+            sentiment = 'liked'
+          else:
+            sentiment = 'didn\'t like'
+
+          response = 'Oh I see! You ' + sentiment + ' \"' + matched_movie + '\". Thanks for bearing with me. Let\'s continue! Tell me about more movies you\'ve seen.'
+          self.carryover = ()
+          movie_title = matched_movie
+
+        elif self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
           response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
           self.recommend_flag += 1
         elif self.recommend_flag == 10:
@@ -269,13 +303,62 @@ class Chatbot:
           readable_title = movie_title
           # Check to see if movie title is known
           if self.getMovieYear(movie_title) is '':
-            needed_info = self.noYearProcess(movie_title)
+            results = []
+
+            converted_title_noyr = self.convert_article(movie_title)
+
+            #loop through non-year movie title list
+            for title, year in self.no_year_titles:
+              if movie_title == title:
+                movie_found = True
+                results.append((title, year))
+              elif converted_title_noyr == title:
+                movie_found = True
+                results.append((converted_title_noyr, year))
+              elif movie_title == 'The Valachi Papers':
+                movie_found = True
+                results.append(('Valachi Papers,The', '1972'))
+              '''
+              alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
+              paren_title = '(' + movie_title.lower() + ')'
+              converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
+              converted_alt_title = '(a.k.a. ' + self.convert_article(alternate_title).lower() + ')'
+              converted_foreign_title = '(' + self.convert_foreignArticle(movie_title).lower() + ')'
+
+              lower_title = title.lower()
+              #   if ',' in title and '(' in title:
+              #     startIndex = title.find('(')
+              #     closingIndex = title.find(')')
+              #     newStr = title[startIndex + 1:closingIndex]
+              #     if ',' in newStr:
+              #       newStr = newStr[newStr.find(',') + 1:]
+              #       setofArticles.append(newStr)
+              if alternate_title in lower_title or converted_alt_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+              elif paren_title in lower_title or converted_paren_title in lower_title or converted_foreign_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+            '''
+            if len(results) == 1:
+              movie_title = "%s (%s)" % (results[0][0], results[0][1])
+              print movie_title
+              print ' ---- ---- ----'
+            elif len(results) > 1: 
+              results = sorted(results, key=itemgetter(1))
+              movie_found = True
+              self.carryover = (results, 0)
+              #return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
+
+
           elif movie_title in self.movie_titles:
             movie_found = True
           elif self.convert_article(movie_title) in self.movie_titles:
             movie_title = self.convert_article(movie_title)
             movie_found = True
-          elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
+          elif movie_title == 'The Valachi Papers (1972)' or movie_title == 'The Valachi Papers': # special case for article without a space
             movie_title = 'Valachi Papers,The (1972)'
             movie_found = True
 
@@ -312,10 +395,8 @@ class Chatbot:
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
             # print self.getMovieYear(movie_title)
             # print self.getGenresList(movie_title)
-
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
@@ -362,8 +443,8 @@ class Chatbot:
 
             if sentiment_counter > 0:
               sentiment = 'liked'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) + 1
+              # for g in self.getGenresList(movie_title):
+              #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
               for g in self.getGenresList(movie_title):
@@ -372,6 +453,12 @@ class Chatbot:
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
+            if self.carryover:
+              self.carryover = (self.carryover[0], sentiment_counter)
+              num_options = len(self.carryover[0])
+              ex_date = self.carryover[0][1][1]
+              return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
+
             like_genre = ''
             dislike_genre = ''
             for genre, count in self.genres_input.iteritems():
@@ -379,7 +466,7 @@ class Chatbot:
                 like_genre = genre
               if count < -2:
                 dislike_genre = genre
-                
+
             if len(like_genre) > 0:
               print("Wow! You seem to really like movies in the " + like_genre + " genre!")
             if len(dislike_genre) > 0:
@@ -399,7 +486,7 @@ class Chatbot:
       # DO NOT CHANGE BELOW FOR CREATIVE MODE
       # CREATIVE MODE ABOVE THIS LINE
       # -----------------------------------------
-      
+
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
@@ -549,6 +636,32 @@ class Chatbot:
       return response
 
 
+    def minDistance(title1, title2):
+      len1 = len(title1)
+      len2 = len(title2)
+      distMatrix = []
+      for i in range(0, len2 + 1):
+        listNum = []
+        for j in range(0, len1 + 1):
+            listNum.append(0)
+        distMatrix.append(listNum)
+      #distMatrix = [[0] * (len1 + 1)] * (len2 + 1)
+      print distMatrix
+      for row in xrange(0, len2 + 1):
+        for col in xrange(0, len1 + 1):
+          print title1[col - 1]
+          print title2[row - 1]
+          if row == 0:
+            distMatrix[row][col] = col
+          elif col == 0:
+            distMatrix[row][col] = row
+          elif title1[col-1] == title2[row-1]:
+            print 'inside'
+            distMatrix[row][col] = distMatrix[row-1][col-1]
+          else:
+            distMatrix[row][col] = 1 + min(distMatrix[row][col-1], distMatrix[row-1][col],distMatrix[row-1][col-1])
+      return distMatrix[len2][len1]
+
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
     #############################################################################
@@ -560,12 +673,11 @@ class Chatbot:
       # movie i by user j
       self.titles, self.ratings = ratings()
       self.movie_titles = [xx for [xx , genre] in self.titles]
-      if self.is_turbo == True:
-  
-        for title in self.movie_titles:
-          title_wo_yr = self.removeYear(title)
-          year = self.getMovieYear(title)
-          self.no_year_titles.append((title_wo_yr, year))
+      #if self.is_turbo == True:
+      for title in self.movie_titles:
+        title_wo_yr = self.removeYear(title)
+        year = self.getMovieYear(title)
+        self.no_year_titles.append((title_wo_yr, year))
 
       reader = csv.reader(open('data/sentiment.txt', 'rb'))
       self.sentiment = dict(reader)
@@ -685,24 +797,24 @@ class Chatbot:
     #############################################################################
     def intro(self):
       return """
-      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system. 
-      This virtual cinephile hit their head as a child and sometimes gets confused that they are a 
+      Hello, I'd like to introduce you to Movie Bot. Movie Bot is not your everyday movie recommendation system.
+      This virtual cinephile hit their head as a child and sometimes gets confused that they are a
       British secret agent. Nevertheless, Movie Bot will help you will all your movie recommendation needs.
 
       Movie Bot exists in two modes.
       1. Standard Mode:
       In Movie Bot's standard mode, they will ask you about your movie preferences.
       After you give at least 5 unique movie preferences, specifically formatted to the standard mode
-      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation. 
-      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)". 
+      Movie Bot's liking, Movie Bot will give you up to 10 movie recommendation.
+      In standard mode Movie Bot needs you to talk about movies in the format "Movie Title (YYYY)".
 
-      2. Creative Mode: 
+      2. Creative Mode:
       In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
       Movie Bot's enhanced capabilities are:
-        1. 
-        2. 
-        3. 
-        
+        1.
+        2.
+        3.
+
       """
 
 
