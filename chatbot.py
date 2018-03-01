@@ -115,18 +115,6 @@ class Chatbot:
 
     #def readVagueInput(self, s):
 
-<<<<<<< HEAD
-    # def noYearProcess(self, movie_title):
-    #   print movie_title
-      
-    #   pass  
-=======
-    def noYearProcess(self, movie_title):
-      print movie_title
-
-      pass
->>>>>>> 7b0eb7716af8ed3d755c195e76b0718d4579c2a0
-
     def segmentWords(self, s):
       """
        * Splits lines on whitespace for file reading
@@ -358,17 +346,11 @@ class Chatbot:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
               print movie_title
               print ' ---- ---- ----'
-<<<<<<< HEAD
             elif len(results) > 1: 
               results = sorted(results, key=itemgetter(1))
               movie_found = True
               self.carryover = (results, 0)
               #return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
-=======
-            elif len(results) > 1:
-              movie_found = False
-              return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
->>>>>>> 7b0eb7716af8ed3d755c195e76b0718d4579c2a0
 
 
           elif movie_title in self.movie_titles:
