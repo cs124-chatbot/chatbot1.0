@@ -319,10 +319,10 @@ class Chatbot:
               elif movie_title == 'The Valachi Papers':
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
-              elif self.isMinWordDistance(movie_title, title) and self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
+              elif self.isMinWordDistance(movie_title, title): #and self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 results.append((title, year))
-              elif self.isMinWordDistance(converted_title_noyr, title) and self.minDistance(converted_title_noyr, title) < EDIT_DIST_THRESHOLD:
+              elif self.isMinWordDistance(converted_title_noyr, title): #and self.minDistance(converted_title_noyr, title) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 results.append((title, year))
               '''
@@ -380,7 +380,7 @@ class Chatbot:
             for title in self.movie_titles:
               lower_title = title.lower()
               lower_title = re.sub(ACTUAL_YEAR_REGEX, '', lower_title)
-              if self.isMinWordDistance(lower_title, movie_title.lower()) and self.minDistance(lower_title, movie_title.lower()) < EDIT_DIST_THRESHOLD:
+              if self.isMinWordDistance(lower_title, movie_title.lower()): #and self.minDistance(lower_title, movie_title.lower()) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 movie_title = title
                 break
@@ -388,16 +388,16 @@ class Chatbot:
               posTitles = re.findall(YEAR_REGEX, lower_title) #hacky regex to get just titles
               for posTitle in posTitles:
                 posTitle = '(' + posTitle + ')'
-                if self.isMinWordDistance(posTitle, alternate_title) and self.minDistance(posTitle, alternate_title) < EDIT_DIST_THRESHOLD:
+                if self.isMinWordDistance(posTitle, alternate_title): #and self.minDistance(posTitle, alternate_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.isMinWordDistance(posTitle, paren_title) and self.minDistance(posTitle, paren_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, paren_title): #and self.minDistance(posTitle, paren_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.isMinWordDistance(posTitle, converted_paren_title) and self.minDistance(posTitle, converted_paren_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, converted_paren_title): #and self.minDistance(posTitle, converted_paren_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.isMinWordDistance(posTitle, converted_alt_title) and self.minDistance(posTitle, converted_alt_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, converted_alt_title): #and self.minDistance(posTitle, converted_alt_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
 
