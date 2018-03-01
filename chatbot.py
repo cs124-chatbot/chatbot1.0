@@ -194,6 +194,7 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         print "TURBO MODE ACTIVATED"
+        print self.movie_inputs
         # Old response = 'processed %s in creative mode!!' % input
 
         #############################################################################
@@ -229,8 +230,8 @@ class Chatbot:
           
           else:
             return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
-          
-          if self.carryover[1] >= 0:
+          sent = self.carryover[1]
+          if sent >= 0:
             sentiment = 'liked'
           else:
             sentiment = 'didn\'t like'
@@ -238,6 +239,7 @@ class Chatbot:
           response = 'Oh I see! You ' + sentiment + ' \"' + matched_movie + '\". Thanks for bearing with me. Let\'s continue! Tell me about more movies you\'ve seen.'
           self.carryover = ()
           movie_title = matched_movie
+          self.movie_inputs[movie_title] = float(sent / abs(sent))
 
         #############################################################################
         # User wants additional recommendations
@@ -471,8 +473,8 @@ class Chatbot:
               #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) - 1
+              #for g in self.getGenresList(movie_title):
+              #  self.genres_input[g] = self.genres_input.get(g, 0) - 1
 
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
