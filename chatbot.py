@@ -378,7 +378,7 @@ class Chatbot:
       # -----------------------------------------
       
       else:
-        # Find movie(s) mentioned by user
+        #### Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
           response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
@@ -417,7 +417,6 @@ class Chatbot:
           else:
             self.bad_input_count = 0
             text = 'Ok. That\'s enough for me to make a recommendation.'
-            #print self.movie_inputs
             preference_vec = []
             for title in self.movie_titles:
               if title in self.movie_inputs:
@@ -429,11 +428,12 @@ class Chatbot:
             response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[9][0]))
             self.recommend_flag = 1
 
-        # More than 1 movied mentioned in the same input
+        #### More than 1 movied mentioned in the same input
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
           self.bad_input_count = 0
-        # 1 Movie Mentioned
+
+        #### 1 Movie Mentioned
         else:
           self.bad_input_count = 0
           # Search for movie title in quotes
@@ -445,6 +445,7 @@ class Chatbot:
 
           movie_found = False
           readable_title = movie_title
+
           # Check to see if movie title is known
           if movie_title in self.movie_titles:
             movie_found = True
@@ -458,7 +459,6 @@ class Chatbot:
           if movie_found:
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-            #self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
             prev_word = ''
@@ -501,12 +501,9 @@ class Chatbot:
 
             if sentiment_counter > 0:
               sentiment = 'liked'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) + 1
             elif sentiment_counter < 0:
               sentiment = 'didn\'t like'
-              for g in self.getGenresList(movie_title):
-                self.genres_input[g] = self.genres_input.get(g, 0) - 1
+
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
@@ -519,9 +516,6 @@ class Chatbot:
           else:
             response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
-      # print self.movie_inputs
-      # print self.recommend_flag
-      # print self.genres_input
       return response
 
 
