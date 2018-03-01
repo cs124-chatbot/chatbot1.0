@@ -58,6 +58,7 @@ class Chatbot:
       self.mag_v_count = 0
       self.bad_input_count = 0
       self.genres_input = {}
+      self.carryover = ()
 
     #############################################################################
     # 1. WARM UP REPL
@@ -114,10 +115,10 @@ class Chatbot:
 
     #def readVagueInput(self, s):
 
-    def noYearProcess(self, movie_title):
-      print movie_title
+    # def noYearProcess(self, movie_title):
+    #   print movie_title
       
-      pass  
+    #   pass  
 
     def segmentWords(self, s):
       """
@@ -203,7 +204,46 @@ class Chatbot:
         # Old response = 'processed %s in creative mode!!' % input
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
-        if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
+        if self.carryover:
+          curr_title = self.carryover[0][0][0]
+          if ':next' in input:
+            self.carryover = ()
+            return "Okay! We can forget about " + curr_title + "! What other movies have you seen?"
+   
+          matched_movie = ''
+          year_matches = re.findall('[1-2][0-9]{3}', input)
+          if len(year_matches) >= 1:
+            year = year_matches[len(year_matches) - 1]
+            for title, date in self.carryover[0]:
+              if year == date:
+                matched_movie = "%s (%s)" % (title, date)           
+            if matched_movie == '':
+              return "Ah geez, this is embarassing. I don't think there was a movie called " + curr_title + " released in " + year + ". Maybe you're mistaken . . .could you try again? If it\'s easier you could also just tell me what number it was chronologically! Also, if you're tired of talking about " + curr_title + ", just tell me :next to move on."
+          
+          elif len(input.strip()) == 1 and input != '0':
+            num_match = re.findall('[0-9]', input) 
+            if len(num_match) >= 1:
+              num = int(num_match[0])
+              if len(self.carryover[0]) >= num:
+                title = self.carryover[0][num-1][0]
+                date = self.carryover[0][num-1][1]
+                matched_movie = "%s (%s)" % (title, date)
+              else: 
+                return "Hmmm . . . there aren'y that many movies called " + curr_title + ". There were only " + str(len(self.carryover[0])) + ". Would you mind telling me which one it was again? If it's easier you can also let me know what year it the movie was released! Otherwise, if you want to forget about it just tell me :next to move on."
+          
+          else:
+            return "Sorry, I was not emotionally prepared for that response! Could you try telling me the year the movie you're talking about was released or what number it was chronolgically? Alternatively, tell me :next , and we can move on from " + curr_title + "."
+          
+          if self.carryover[1] >= 0:
+            sentiment = 'liked'
+          else:
+            sentiment = 'didn\'t like'
+
+          response = 'Oh I see! You ' + sentiment + ' \"' + matched_movie + '\". Thanks for bearing with me. Let\'s continue! Tell me about more movies you\'ve seen.'
+          self.carryover = ()
+          movie_title = matched_movie
+
+        elif self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
           response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
           self.recommend_flag += 1
         elif self.recommend_flag == 10:
@@ -288,8 +328,10 @@ class Chatbot:
               print movie_title
               print ' ---- ---- ----'
             elif len(results) > 1: 
-              movie_found = False
-              return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
+              results = sorted(results, key=itemgetter(1))
+              movie_found = True
+              self.carryover = (results, 0)
+              #return "Looks like there are multiple movies called " + movie_title + ". Can you please tell me that again with the year of the movie you were talking about? Thanks!"
 
 
           elif movie_title in self.movie_titles:
@@ -393,6 +435,12 @@ class Chatbot:
 
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
+
+            if self.carryover:
+              self.carryover = (self.carryover[0], sentiment_counter)
+              num_options = len(self.carryover[0])
+              ex_date = self.carryover[0][1][1]
+              return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
 
             like_genre = ''
             dislike_genre = ''
