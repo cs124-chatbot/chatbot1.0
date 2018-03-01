@@ -66,7 +66,7 @@ class Chatbot:
       self.potential_titles = []
       self.emotionDict = {}
       self.setupEmotion()
-
+      
     #############################################################################
     # 1. WARM UP REPL
     #############################################################################
@@ -240,8 +240,6 @@ class Chatbot:
       # highly recommended                                                        #
       #############################################################################
       if self.is_turbo == True:
-        print "TURBO MODE ACTIVATED"
-        print self.movie_inputs
         # Old response = 'processed %s in creative mode!!' % input
 
         #############################################################################
@@ -356,9 +354,10 @@ class Chatbot:
         # User did not mention a movie in QUOTES
         #############################################################################
         elif len(movies_mentioned) == 0:
-
+          self.potential_titles = []
           all_potential_titles = []
           capitalized_phrases = re.findall(CAPITALIZED_PHRASE, input)
+
           # print 'capitalized_phrases:'
           # print capitalized_phrases
           for cap_phrase in capitalized_phrases:
@@ -383,19 +382,102 @@ class Chatbot:
               if pot_year == "":
                 for no_yr_title, year in self.no_year_titles:
                   edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
+                  unquote_match = re.search(pot_title, input)
+                  unquote_start = unquote_match.start(0)
+                  unquote_end = unquote_match.end(0)
+                  title_removed = input[:unquote_start] + input[unquote_end:]
                   if edit_distance == 0:
-                    self.potential_titles.append((no_yr_title, edit_distance))
+                    real_title = no_yr_title + " (" + year + ")"
+                    self.potential_titles.append((real_title, edit_distance, title_removed))
               else:
                 for real_title in self.movie_titles:
                   edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
+                  unquote_match = re.search(pot_title, input)
+                  unquote_start = unquote_match.start(0)
+                  unquote_end = unquote_match.end(0)
+                  title_removed = input[:unquote_start] + input[unquote_end:]
                   if edit_distance == 0:
-                    self.potential_titles.append((real_title, edit_distance))
+                    self.potential_titles.append((real_title, edit_distance, title_removed))
 
             # Then sort by highest length of match
-            self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
-            best_match_unquoted = self.potential_titles[0][0]
-            response = "I think you're talking about \"" + best_match_unquoted + "\". What did you think of \"" + best_match_unquoted + "\"?"
+            if len(self.potential_titles) > 0:
+              self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
+              readable_title = self.potential_titles[0][0]
+              input_movie_removed = self.potential_titles[0][2]
+              tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+              sentiment = 'liked'
+              sentiment_counter = 0
+              prev_word = ''
+              curr_word = ''
+              negation_flag = False
 
+              for t in tokens:
+                prev_word = curr_word
+                curr_word = t
+                if prev_word in self.negation_lexicon:
+                  negation_flag = True
+
+                t_stem = self.porter.stem(t)
+                if t.strip() in ['but', ',but', ', but']:
+                  sentiment_counter = 0
+
+                if t in self.sentiment:
+                  if self.sentiment[t] == 'pos':
+                    if negation_flag:
+                      sentiment_counter -= 1
+                    else:
+                      sentiment_counter += 1
+                  else:
+                    if negation_flag:
+                      sentiment_counter += 1
+                    else:
+                      sentiment_counter -= 1
+
+                elif t_stem in self.sentiment_stemmed:
+                  if self.sentiment_stemmed[t_stem] == 'pos':
+                    if negation_flag:
+                      sentiment_counter -= 1
+                    else:
+                      sentiment_counter += 1
+                  else:
+                    if negation_flag:
+                      sentiment_counter += 1
+                    else:
+                      sentiment_counter -= 1
+
+              if sentiment_counter > 0:
+                sentiment = 'liked'
+                # for g in self.getGenresList(movie_title):
+                #   self.genres_input[g] = self.genres_input.get(g, 0) + 1
+              elif sentiment_counter < 0:
+                sentiment = 'didn\'t like'
+                #for g in self.getGenresList(movie_title):
+                #  self.genres_input[g] = self.genres_input.get(g, 0) - 1
+
+              else:
+                return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
+
+              like_genre = ''
+              dislike_genre = ''
+              for genre, count in self.genres_input.iteritems():
+                if count > 2:
+                  like_genre = genre
+                if count < -2:
+                  dislike_genre = genre
+
+              if len(like_genre) > 0:
+                print("Wow! You seem to really like movies in the " + like_genre + " genre!")
+              if len(dislike_genre) > 0:
+                print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
+
+              response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
+            else:
+              self.bad_input_count += 1
+              response = "Sorry. Didn't quite get that. Tell me about a movie that you've seen."
+
+          #############################################################################
+          # User keeps on putting in no-quote inputs
+          #############################################################################
           elif self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
             self.bad_input_count += 1
@@ -419,8 +501,8 @@ class Chatbot:
           #############################################################################
           elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
             possible_responses = [
-              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
-              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen.',
+              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen.',
               'I know I\'m supposed to be a smart bot... but in order for me to make good recommendations, I need you to tell me a few more movies that you\'ve seen. Thanks!'
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
@@ -501,7 +583,7 @@ class Chatbot:
                 series_alt_matches = re.findall(series_title_regex, self.reverse_convert_article(title))
                 if len(series_matches) >= 1 or len(series_alt_matches) >= 1:
                   series_results.append((title, year))
-              '''
+              
               alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
               paren_title = '(' + movie_title.lower() + ')'
               converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
@@ -524,8 +606,8 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 results.append((title, year))
-            '''
-            if len(series_results) > 0:
+            
+            if len(series_results) > 1:
               full_results = sorted(results + list(set(series_results) - set(results)), key=itemgetter(1))
               movie_found = True
               self.series_carryover = (full_results, 0)
@@ -597,13 +679,6 @@ class Chatbot:
           # print set(setofArticles)
 
           if movie_found:
-
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Creative
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # print self.getMovieYear(movie_title)
-            # print self.getGenresList(movie_title)
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
             #self.movies_count += 1
@@ -1053,10 +1128,14 @@ class Chatbot:
       2. Creative Mode:
       In creative mode, Movie Bot drinks 10 red bulls and gets their wings (enhanced capabilities).
       Movie Bot's enhanced capabilities are:
-        1.
-        2.
-        3.
-
+        1. Movie Bot doesn't need the year of the movie you're talking about.
+        2. When there are disambiguities about the movie you were talking about, either because it's part of a series or there are multilpe movies with that title, Movie Bot will prompt you to clarify. (Rubric #4)
+        3. Movie Bot doesn't need you to enter an exact movie title (without spelling erros) in quotations or with perfect capitalization. (Rubric #1)
+        4. Movie Bot speaks english much more fluently. (Rubric #9)
+        5. Movie Bot can identify alternate movie titles and foreign movie titles, even with foregin articles. (Rubric #11)
+        6. Movie Bot can spell check titles that are within quotes, even without the year (within reason). (Rubric #3)
+        7. Movie Bot will respond accordingly if you tell them how you are feeling. (Rubric #6)
+        8. Movie Bot recognizes if you like a lot of movies of the same genre and will comment on this fact.
       """
 
 
