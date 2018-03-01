@@ -178,12 +178,10 @@ class Chatbot:
     def convert_foreignArticle(self, s):
       if len(s) >= 3:
         foreignList = set(['i', 'de', ' das', ' les', 'las', "l'", 'un', 'det', 'der', 'die', 'den', 'une', 'el', 'en', 'il', 'le', 'la', 'lo', 'los', 'un'])
-        print s
         for article in foreignList:
           if article in s.lower() and s.lower().find(article) == 0:
             s = s[len(article):]
             s += ', ' + article.capitalize() + ' '
-            print s
             break
       return s.strip()
 
@@ -282,7 +280,33 @@ class Chatbot:
               elif converted_title_noyr == title:
                 movie_found = True
                 results.append((converted_title_noyr, year))
+              elif movie_title == 'The Valachi Papers':
+                movie_found = True
+                results.append(('Valachi Papers,The', '1972'))
+              '''
+              alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
+              paren_title = '(' + movie_title.lower() + ')'
+              converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
+              converted_alt_title = '(a.k.a. ' + self.convert_article(alternate_title).lower() + ')'
+              converted_foreign_title = '(' + self.convert_foreignArticle(movie_title).lower() + ')'
 
+              lower_title = title.lower()
+              #   if ',' in title and '(' in title:
+              #     startIndex = title.find('(')
+              #     closingIndex = title.find(')')
+              #     newStr = title[startIndex + 1:closingIndex]
+              #     if ',' in newStr:
+              #       newStr = newStr[newStr.find(',') + 1:]
+              #       setofArticles.append(newStr)
+              if alternate_title in lower_title or converted_alt_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+              elif paren_title in lower_title or converted_paren_title in lower_title or converted_foreign_title in lower_title:
+                movie_found = True
+                movie_title = title
+                results.append((title, year))
+            '''
             if len(results) == 1:
               movie_title = "%s (%s)" % (results[0][0], results[0][1])
               print movie_title
