@@ -322,7 +322,7 @@ class Chatbot:
 
           else:
             for title, date in self.series_carryover[0]:
-              if input in title:
+              if input.lower() in title.lower():
                 matched_movie = "%s (%s)" % (title, date)
             if matched_movie == '':
               return "Sorry, that doesn't sound like one of the subtitles of this series. Want to try another? Remember, you can also tell me the date it was released or it's number in the series. Alternatively, tell me :next , and we can move on."
@@ -558,17 +558,18 @@ class Chatbot:
             series_results = []
 
             converted_title_noyr = self.convert_article(movie_title)
-            series_title_regex = (movie_title + r'[ ]?:') + r'|' + (movie_title + r' and ') + r'|' + (r':[ ]?' + movie_title) + r'|' + (movie_title + r' [0-9]+') + r'|' + (movie_title + ROMAN_NUM_REGEX)
+            mov_lower = movie_title.lower()
+            series_title_regex = (mov_lower + r'[ ]?:') + r'|' + (mov_lower + r' and ') + r'|' + (r':[ ]?' + mov_lower) + r'|' + (mov_lower + r' [0-9]+') + r'|' + (mov_lower + ROMAN_NUM_REGEX)
 
             #loop through non-year movie title list
             for title, year in self.no_year_titles:
-              if movie_title == title:
+              if movie_title.lower() == title.lower():
                 movie_found = True
                 results.append((title, year))
-              elif converted_title_noyr == title:
+              elif converted_title_noyr.lower() == title.lower():
                 movie_found = True
                 results.append((converted_title_noyr, year))
-              elif movie_title == 'The Valachi Papers':
+              elif movie_title.lower() == 'The Valachi Papers'.lower():
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
               elif self.isMinWordDistance(movie_title, title): #and self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
@@ -579,8 +580,8 @@ class Chatbot:
                 results.append((title, year))
               #Checks for Series
               else:
-                series_matches = re.findall(series_title_regex, title)
-                series_alt_matches = re.findall(series_title_regex, self.reverse_convert_article(title))
+                series_matches = re.findall(series_title_regex, title.lower())
+                series_alt_matches = re.findall(series_title_regex, (self.reverse_convert_article(title)).lower())
                 if len(series_matches) >= 1 or len(series_alt_matches) >= 1:
                   series_results.append((title, year))
               
