@@ -300,7 +300,7 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 break
-          print set(setofArticles)
+          # print set(setofArticles)
 
           if movie_found:
 
@@ -308,8 +308,8 @@ class Chatbot:
             # Creative
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            print self.getMovieYear(movie_title)
-            print self.getGenresList(movie_title)
+            # print self.getMovieYear(movie_title)
+            # print self.getGenresList(movie_title)
 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -363,9 +363,21 @@ class Chatbot:
               sentiment = 'didn\'t like'
               for g in self.getGenresList(movie_title):
                 self.genres_input[g] = self.genres_input.get(g, 0) - 1
-                
+
             else:
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
+
+            like_genre = ''
+            dislike_genre = ''
+            for genre, count in self.genres_input.iteritems():
+              if count > 2:
+                like_genre = genre
+              if count < -2:
+                dislike_genre = genre
+            if len(like_genre) > 0:
+              print("Wow! You seem to really like movies in the " + like_genre + " genre!")
+            if len(dislike_genre) > 0:
+              print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
 
             response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
@@ -524,6 +536,10 @@ class Chatbot:
       # print self.movie_inputs
       # print self.recommend_flag
       # print self.genres_input
+      #############################################################################
+      # return statement for both Turbo and Standard bots
+      #############################################################################
+
       return response
 
 
