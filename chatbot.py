@@ -372,10 +372,10 @@ class Chatbot:
       self.sentiment_stemmed = dict()
       subdirs = os.listdir('deps')
       if 'sentiment_stemmed.txt' in subdirs:
-        print('Sentiment lexicon already stemmed...')
+        #print('Sentiment lexicon already stemmed...')
         self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
       else:
-        print('Stemming sentiment lexicon.')
+        #print('Stemming sentiment lexicon.')
         of = open('deps/sentiment_stemmed.txt', 'w')
         for k,v in self.sentiment.iteritems():
           k_stem = self.porter.stem(k)
