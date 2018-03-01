@@ -195,7 +195,10 @@ class Chatbot:
       if self.is_turbo == True:
         print "TURBO MODE ACTIVATED"
         # Old response = 'processed %s in creative mode!!' % input
+
+        #############################################################################
         # Find movie(s) mentioned by user
+        #############################################################################
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
         if self.carryover:
           curr_title = self.carryover[0][0][0]
@@ -236,6 +239,9 @@ class Chatbot:
           self.carryover = ()
           movie_title = matched_movie
 
+        #############################################################################
+        # User wants additional recommendations
+        #############################################################################
         elif self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
           response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
           self.recommend_flag += 1
@@ -244,6 +250,11 @@ class Chatbot:
           self.movie_inputs = {}
           self.recommended_movies = []
           self.recommend_flag = 0
+
+
+        #############################################################################
+        # User did not mention a movie
+        #############################################################################
         elif len(movies_mentioned) == 0:
           if self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
@@ -262,6 +273,10 @@ class Chatbot:
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             self.bad_input_count += 1
+          
+          #############################################################################
+          # User did not mention enough movies to activate recommendation
+          #############################################################################
           elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
             possible_responses = [
               'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
@@ -270,6 +285,10 @@ class Chatbot:
             ]
             response = possible_responses[random.randint(0, len(possible_responses) - 1)]
             self.bad_input_count += 1
+          
+          #############################################################################
+          # User DID mention enough movies for a recommendation
+          #############################################################################
           else:
             self.bad_input_count = 0
             text = 'Ok. That\'s enough for me to make a recommendation.'
@@ -285,11 +304,16 @@ class Chatbot:
             response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[9][0]))
             self.recommend_flag = 1
 
+        #############################################################################
         # More than 1 movied mentioned in the same input
+        #############################################################################
         elif len(movies_mentioned) > 1:
           response = 'Please tell me about one movie at a time. Go ahead.'
           self.bad_input_count = 0
+
+        #############################################################################
         # 1 Movie Mentioned
+        #############################################################################
         else:
           self.bad_input_count = 0
           # Search for movie title in quotes
