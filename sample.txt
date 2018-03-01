@@ -6,4 +6,8 @@ I don’t like "Prom (2011)"
 "Rango (2011)" was bad
 I hate "Triangle (2009)"
 I like "1984 (1956)"
+<<<<<<< HEAD
+=======
+no
+>>>>>>> ead7371c1230ee30bd1af342fe05375703eff8dc
 :quit

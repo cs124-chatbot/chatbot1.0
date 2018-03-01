@@ -106,6 +106,13 @@ class Chatbot:
       result = self.segmentWords('\n'.join(contents))
       return result
 
+    #def readVagueInput(self, s):
+
+    def noYearProcess(self, movie_title):
+      print movie_title
+      
+      pass  
+
     def segmentWords(self, s):
       """
        * Splits lines on whitespace for file reading
@@ -257,7 +264,9 @@ class Chatbot:
           movie_found = False
           readable_title = movie_title
           # Check to see if movie title is known
-          if movie_title in self.movie_titles:
+          if self.getMovieYear(movie_title) is '':
+            needed_info = self.noYearProcess(movie_title)
+          elif movie_title in self.movie_titles:
             movie_found = True
           elif self.convert_article(movie_title) in self.movie_titles:
             movie_title = self.convert_article(movie_title)
