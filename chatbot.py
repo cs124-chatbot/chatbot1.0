@@ -193,7 +193,189 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         response = 'processed %s in creative mode!!' % input
+        # Find movie(s) mentioned by user
+        movies_mentioned = re.findall(QUOTATION_REGEX, input)
+        if self.recommend_flag > 0 and self.recommend_flag <= 9 and input != ':no':
+          response = ("I suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (self.reverse_convert_article(self.recommended_movies[(9 - self.recommend_flag)][0]))
+          self.recommend_flag += 1
+        elif self.recommend_flag == 10:
+          response = "I gave you 10 recommendations already! Did you watch all of them already? I can make more recommendations, but you'll have to update me on your preferences."
+          self.movie_inputs = {}
+          self.recommended_movies = []
+          self.recommend_flag = 0
+        elif len(movies_mentioned) == 0:
+          if self.bad_input_count == 2:
+            response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
+            self.bad_input_count += 1
+          elif self.bad_input_count > 2:
+            response = "Be nice and tell me about a movie that you've watched. I've got places to go! \nSpeaking of which... \"Going Places (Valseuses, Les) (1974)\" is not bad."
+            self.bad_input_count += 1
+          elif input == ':no':
+            self.movie_inputs = {}
+            self.recommended_movies = []
+            self.recommend_flag = 0
+            possible_responses = [
+              'OK. Tell me more about movies that you\'ve watched. (enter :quit to exit)',
+              'Sure. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes. (enter :quit to exit)',
+              'So, tell me about another movie. (enter :quit to exit)'
+            ]
+            response = possible_responses[random.randint(0, len(possible_responses) - 1)]
+            self.bad_input_count += 1
+          elif len(self.movie_inputs) < MIN_NUM_MOVIES_NEEDED:
+            possible_responses = [
+              'I need to know a bit more about your movie preferences before I can provide you with a recommendation. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'Sorry. Didn\'t quite get that. Tell me about a movie that you\'ve seen. Make sure it\'s in quotes.',
+              'I know I\'m supposed to be a smart bot... but in order for me to make good recommendations, I need you to tell me a few more movies that you\'ve seen. Thanks!'
+            ]
+            response = possible_responses[random.randint(0, len(possible_responses) - 1)]
+            self.bad_input_count += 1
+          else:
+            self.bad_input_count = 0
+            text = 'Ok. That\'s enough for me to make a recommendation.'
+            #print self.movie_inputs
+            preference_vec = []
+            for title in self.movie_titles:
+              if title in self.movie_inputs:
+                preference_vec.append(self.movie_inputs[title])
+              else:
+                preference_vec.append(0)
+            #print preference_vec
+            self.recommended_movies = self.recommend(preference_vec)
+            response = ("%s\nI suggest you watch \"%s.\"\nWould you like another recommendation? (If not, enter :no. Enter :quit to exit)") % (text, self.reverse_convert_article(self.recommended_movies[9][0]))
+            self.recommend_flag = 1
 
+        # More than 1 movied mentioned in the same input
+        elif len(movies_mentioned) > 1:
+          response = 'Please tell me about one movie at a time. Go ahead.'
+          self.bad_input_count = 0
+        # 1 Movie Mentioned
+        else:
+          self.bad_input_count = 0
+          # Search for movie title in quotes
+          match = re.search(QUOTATION_REGEX, input)
+          quote_start = match.start(0)
+          quote_end = match.end(0)
+          movie_title = input[quote_start + 1 : quote_end - 1]
+          input_movie_removed = input[:quote_start] + input[quote_end:]
+
+          movie_found = False
+          readable_title = movie_title
+          # Check to see if movie title is known
+          if self.getMovieYear(movie_title) is '':
+            needed_info = self.noYearProcess(movie_title)
+          elif movie_title in self.movie_titles:
+            movie_found = True
+          elif self.convert_article(movie_title) in self.movie_titles:
+            movie_title = self.convert_article(movie_title)
+            movie_found = True
+          elif movie_title == 'The Valachi Papers (1972)': # special case for article without a space
+            movie_title = 'Valachi Papers,The (1972)'
+            movie_found = True
+
+          setofArticles = []
+          if not movie_found:
+            alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
+            paren_title = '(' + movie_title.lower() + ')'
+            converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
+            converted_alt_title = '(a.k.a. ' + self.convert_article(alternate_title).lower() + ')'
+            converted_foreign_title = '(' + self.convert_foreignArticle(movie_title).lower() + ')'
+
+            for title in self.movie_titles:
+              lower_title = title.lower()
+              actual_year_regex = r'\([1-2][0-9]{3}\)'
+              lower_title = re.sub(actual_year_regex, '', lower_title)
+            #   if ',' in title and '(' in title:
+            #     startIndex = title.find('(')
+            #     closingIndex = title.find(')')
+            #     newStr = title[startIndex + 1:closingIndex]
+            #     if ',' in newStr:
+            #       newStr = newStr[newStr.find(',') + 1:]
+            #       setofArticles.append(newStr)
+              if alternate_title in lower_title or converted_alt_title in lower_title:
+                movie_found = True
+                movie_title = title
+                break
+              elif paren_title in lower_title or converted_paren_title in lower_title or converted_foreign_title in lower_title:
+                movie_found = True
+                movie_title = title
+                break
+          print set(setofArticles)
+
+          if movie_found:
+
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Creative
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            print self.getMovieYear(movie_title)
+            print self.getGenresList(movie_title)
+
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+            #self.movies_count += 1
+            sentiment = 'liked'
+            sentiment_counter = 0
+            prev_word = ''
+            curr_word = ''
+            negation_flag = False
+
+            for t in tokens:
+              prev_word = curr_word
+              curr_word = t
+              if prev_word in self.negation_lexicon:
+                negation_flag = True
+
+              t_stem = self.porter.stem(t)
+              if t.strip() in ['but', ',but', ', but']:
+                sentiment_counter = 0
+
+              if t in self.sentiment:
+                if self.sentiment[t] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+
+              elif t_stem in self.sentiment_stemmed:
+                if self.sentiment_stemmed[t_stem] == 'pos':
+                  if negation_flag:
+                    sentiment_counter -= 1
+                  else:
+                    sentiment_counter += 1
+                else:
+                  if negation_flag:
+                    sentiment_counter += 1
+                  else:
+                    sentiment_counter -= 1
+
+            if sentiment_counter > 0:
+              sentiment = 'liked'
+            elif sentiment_counter < 0:
+              sentiment = 'didn\'t like'
+            else:
+              return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
+
+            response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
+
+            if sentiment_counter == 0:
+              self.movie_inputs[movie_title] = 1.0
+            else:
+              self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
+          else:
+            response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+
+      # -----------------------------------------
+      # STANDARD MODE
+      # DO NOT CHANGE BELOW FOR CREATIVE MODE
+      # CREATIVE MODE ABOVE THIS LINE
+      # -----------------------------------------
+      
       else:
         # Find movie(s) mentioned by user
         movies_mentioned = re.findall(QUOTATION_REGEX, input)
