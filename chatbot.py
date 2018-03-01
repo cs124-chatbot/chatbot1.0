@@ -28,7 +28,7 @@ ACTUAL_YEAR_REGEX = r'\([1-2][0-9]{3}\)'
 YEAR_REGEX = r'\((.*?)\)'
 
 MIN_NUM_MOVIES_NEEDED = 5
-EDIT_DIST_THRESHOLD = 3
+EDIT_DIST_THRESHOLD = 4
 # Binarize Constants
 UPPER_THRESHOLD = 3.1
 LOWER_THRESHOLD = 2.9
@@ -319,10 +319,10 @@ class Chatbot:
               elif movie_title == 'The Valachi Papers':
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
-              elif self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
+              elif self.isMinWordDistance(movie_title, title) and self.minDistance(movie_title, title) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 results.append((title, year))
-              elif self.minDistance(converted_title_noyr, title) < EDIT_DIST_THRESHOLD:
+              elif self.isMinWordDistance(converted_title_noyr, title) and self.minDistance(converted_title_noyr, title) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 results.append((title, year))
               '''
@@ -380,7 +380,7 @@ class Chatbot:
             for title in self.movie_titles:
               lower_title = title.lower()
               lower_title = re.sub(ACTUAL_YEAR_REGEX, '', lower_title)
-              if self.minDistance(lower_title, movie_title.lower()) < EDIT_DIST_THRESHOLD:
+              if self.isMinWordDistance(lower_title, movie_title.lower()) and self.minDistance(lower_title, movie_title.lower()) < EDIT_DIST_THRESHOLD:
                 movie_found = True
                 movie_title = title
                 break
@@ -388,16 +388,16 @@ class Chatbot:
               posTitles = re.findall(YEAR_REGEX, lower_title) #hacky regex to get just titles
               for posTitle in posTitles:
                 posTitle = '(' + posTitle + ')'
-                if self.minDistance(posTitle, alternate_title) < EDIT_DIST_THRESHOLD:
+                if self.isMinWordDistance(posTitle, alternate_title) and self.minDistance(posTitle, alternate_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.minDistance(posTitle, paren_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, paren_title) and self.minDistance(posTitle, paren_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.minDistance(posTitle, converted_paren_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, converted_paren_title) and self.minDistance(posTitle, converted_paren_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
-                elif self.minDistance(posTitle, converted_alt_title) < EDIT_DIST_THRESHOLD:
+                elif self.isMinWordDistance(posTitle, converted_alt_title) and self.minDistance(posTitle, converted_alt_title) < EDIT_DIST_THRESHOLD:
                   movie_found = True
                   movie_title = title
 
@@ -663,6 +663,16 @@ class Chatbot:
 
       return response
 
+    def isMinWordDistance(self, title1, title2):
+      title1List = title1.split()
+      title2List = title2.split()
+      if len(title1List) != len(title2List):
+        return False
+      else:
+        for i in xrange(0, len(title1List)):
+          if self.minDistance(title1List[i], title2List[i]) > 2:
+            return False
+      return True
     #returns minimum editDistance between two strings
     def minDistance(self, title1, title2):
       len1 = len(title1)
