@@ -470,17 +470,17 @@ class Chatbot:
               else:
                 return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
-              if self.carryover:
-                self.carryover = (self.carryover[0], sentiment_counter)
-                num_options = len(self.carryover[0])
-                ex_date = self.carryover[0][1][1]
-                return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
-              if self.series_carryover:
-                self.series_carryover = (self.series_carryover[0], sentiment_counter)
-                response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
-                for movie, yr in self.series_carryover[0]:
-                  response = response + "\n" + movie + " (" + yr + ")"
-                return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
+            #   if self.carryover:
+            #     self.carryover = (self.carryover[0], sentiment_counter)
+            #     num_options = len(self.carryover[0])
+            #     ex_date = self.carryover[0][1][1]
+            #     return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
+            #   if self.series_carryover:
+            #     self.series_carryover = (self.series_carryover[0], sentiment_counter)
+            #     response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
+            #     for movie, yr in self.series_carryover[0]:
+            #       response = response + "\n" + movie + " (" + yr + ")"
+            #     return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
 
               like_genre = ''
               dislike_genre = ''
