@@ -382,25 +382,29 @@ class Chatbot:
             for pot_title in all_potential_titles:
               pot_year = self.getMovieYear(pot_title)
 
-              if pot_year == "":
-                for no_yr_title, year in self.no_year_titles:
-                  edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
-                  unquote_match = re.search(pot_title, input)
-                  unquote_start = unquote_match.start(0)
-                  unquote_end = unquote_match.end(0)
-                  title_removed = input[:unquote_start] + input[unquote_end:]
-                  if edit_distance == 0:
-                    real_title = no_yr_title + " (" + year + ")"
-                    self.potential_titles.append((real_title, edit_distance, title_removed))
-              else:
-                for real_title in self.movie_titles:
-                  edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
-                  unquote_match = re.search(pot_title, input)
-                  unquote_start = unquote_match.start(0)
-                  unquote_end = unquote_match.end(0)
-                  title_removed = input[:unquote_start] + input[unquote_end:]
-                  if edit_distance == 0:
-                    self.potential_titles.append((real_title, edit_distance, title_removed))
+              if pot_year != "":
+                pot_title = pot_title[:-7]
+                print 'pot_title: %s' % (pot_title)
+              for no_yr_title, year in self.no_year_titles:
+                edit_distance = self.minDistance(pot_title.lower(), no_yr_title.lower())
+                unquote_match = re.search(pot_title, input)
+                unquote_start = unquote_match.start(0)
+                unquote_end = unquote_match.end(0)
+                title_removed = input[:unquote_start] + input[unquote_end:]
+                if edit_distance == 0:
+                  real_title = no_yr_title + " (" + year + ")"
+                  self.potential_titles.append((real_title, edit_distance, title_removed))
+              # else:
+              #   remove_year_title = pot_title[:-7]
+              #   print 'year removed: %s' % (remove_year_title)
+              #   for real_title in self.movie_titles:
+              #     edit_distance = self.minDistance(pot_title.lower(), real_title.lower())
+              #     unquote_match = re.search(pot_title, input)
+              #     unquote_start = unquote_match.start(0)
+              #     unquote_end = unquote_match.end(0)
+              #     title_removed = input[:unquote_start] + input[unquote_end:]
+              #     if edit_distance == 0:
+              #       self.potential_titles.append((real_title, edit_distance, title_removed))
 
             # Then sort by highest length of match
             if len(self.potential_titles) > 0:
