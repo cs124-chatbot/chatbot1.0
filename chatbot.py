@@ -32,7 +32,7 @@ CAPITALIZED_PHRASE = r'(?=([A-Z].*))'
 
 MIN_NUM_MOVIES_NEEDED = 5
 EDIT_DIST_THRESHOLD = 4
-EMOTION_THRESHOLD = 4
+EMOTION_THRESHOLD = 3
 # Binarize Constants
 UPPER_THRESHOLD = 3.1
 LOWER_THRESHOLD = 2.9
@@ -69,6 +69,7 @@ class Chatbot:
       self.emotionDict = {}
       self.emotion_counter = {}
       self.listEmotions = ['joy', 'sadnesss', 'anger', 'fear', 'trust', 'disgust', 'anticipation', 'surprise']
+      self.listGenres = ['comedy', 'comedy', 'animation', 'animation/children', '','', 'sci-fi', 'mystery']
       self.setupEmotion()
 
     #############################################################################
@@ -245,7 +246,7 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         # Old response = 'processed %s in creative mode!!' % input
-        print self.emotion_counter
+        notCalcEmotion = True #have not calculated emotion
         #############################################################################
         # Find movie(s) mentioned by user
         #############################################################################
@@ -377,7 +378,8 @@ class Chatbot:
               all_potential_titles.append(potential_title)
           # print 'all_potential_titles:'
           # print all_potential_titles
-
+          if len(all_potential_titles) <= 0:
+            self.calcEmotion(input)
           # Found potential titles
           if len(all_potential_titles) > 0:
             for pot_title in all_potential_titles:
@@ -420,6 +422,7 @@ class Chatbot:
               prev_word = ''
               curr_word = ''
               negation_flag = False
+              self.calcEmotion(input_movie_removed)
 
               for t in tokens:
                 prev_word = curr_word
@@ -430,8 +433,6 @@ class Chatbot:
                 t_stem = self.porter.stem(t)
                 if t.strip() in ['but', ',but', ', but']:
                   sentiment_counter = 0
-
-                self.incrementEmotionCounter(negation_flag, t_stem)
 
                 if t in self.sentiment:
                   if self.sentiment[t] == 'pos':
@@ -469,17 +470,17 @@ class Chatbot:
               else:
                 return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
-            #   if self.carryover:
-            #     self.carryover = (self.carryover[0], sentiment_counter)
-            #     num_options = len(self.carryover[0])
-            #     ex_date = self.carryover[0][1][1]
-            #     return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
-            #   if self.series_carryover:
-            #     self.series_carryover = (self.series_carryover[0], sentiment_counter)
-            #     response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
-            #     for movie, yr in self.series_carryover[0]:
-            #       response = response + "\n" + movie + " (" + yr + ")"
-            #     return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
+              if self.carryover:
+                self.carryover = (self.carryover[0], sentiment_counter)
+                num_options = len(self.carryover[0])
+                ex_date = self.carryover[0][1][1]
+                return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
+              if self.series_carryover:
+                self.series_carryover = (self.series_carryover[0], sentiment_counter)
+                response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
+                for movie, yr in self.series_carryover[0]:
+                  response = response + "\n" + movie + " (" + yr + ")"
+                return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
 
               like_genre = ''
               dislike_genre = ''
@@ -502,15 +503,15 @@ class Chatbot:
                 self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
             else:
               self.calcEmotion(input)
-              userEmotion = self.checkExceedsThreshold(self.emotion_counter)
-              if userEmotion != '':
-                response = 'I am feeling some sense of ' + userEmotion
-              else:
-                response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+              notCalcEmotion = False
+              response = self.storeResponse(input)
+
 
           #############################################################################
           # User keeps on putting in no-quote inputs
           #############################################################################
+          elif self.checkThreshold(self.emotion_counter):
+            response = self.storeResponse(input)
           elif self.bad_input_count == 2:
             response = "Listen. I know you're probably trying to break me. But I'm unbreakable!\nBy the way, \"Unbreakable (2000)\" is a good choice if you're into Drama or Sci-Fi. Tell me about another movie."
             self.bad_input_count += 1
@@ -765,8 +766,6 @@ class Chatbot:
               if t.strip() in ['but', ',but', ', but']:
                 sentiment_counter = 0
 
-              self.incrementEmotionCounter(negation_flag, t_stem)
-
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -846,11 +845,8 @@ class Chatbot:
               self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
           else:
             self.calcEmotion(input)
-            userEmotion = self.checkExceedsThreshold(self.emotion_counter)
-            if userEmotion != '':
-              response = 'I am feeling some sense of ' + userEmotion
-            else:
-              response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+            response = self.storeResponse(input)
+
 
       # -----------------------------------------
       # STANDARD MODE
@@ -956,8 +952,6 @@ class Chatbot:
               if t.strip() in ['but', ',but', ', but']:
                 sentiment_counter = 0
 
-              self.incrementEmotionCounter(negation_flag, t_stem)
-
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -998,11 +992,7 @@ class Chatbot:
               self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
           else:
             self.calcEmotion(input)
-            userEmotion = self.checkExceedsThreshold(self.emotion_counter)
-            if userEmotion != '':
-              response = 'I am feeling some sense of ' + userEmotion
-            else:
-              response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+            response = self.storeResponse(input)
 
       # print self.movie_inputs
       # print self.recommend_flag
@@ -1012,6 +1002,28 @@ class Chatbot:
       #############################################################################
 
       return response
+
+    def storeResponse(self, input):
+      userEmotion = self.checkExceedsThreshold(self.emotion_counter)
+      if userEmotion != '':
+        response = 'I am feeling some sense of ' + userEmotion + '. ' + self.getGenreforEmotion(userEmotion)
+      else:
+        response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+      return response
+
+    def getGenreforEmotion(self, emotion):
+      if emotion != '':
+        indexEmotion = self.listEmotions.index(emotion)
+        movieGenre = self.listGenres[indexEmotion]
+        if movieGenre != '':
+          return 'Maybe try some movies in ' + movieGenre + '? Feel free to list movies in ' + movieGenre + '(or others) and we can see if we have in store what you like or dislike!'
+        else:
+          if emotion == 'disgust':
+            return 'Hmm... is it because of me? How do you know I haven\'t showered in a week? Jk... What other movies do you like or dislike?'
+          elif emotion == 'trust':
+            return 'I sure am trustworthy. Don\'t worry. Everything you say here will be confidential.... So, try a movie?'
+        return ''
+
 
     def calcEmotion(self, userInput):
       tokens = userInput.split(' ') #remove movie title before tokenizing
@@ -1049,6 +1061,12 @@ class Chatbot:
             else:
               self.emotion_counter[emotion] += 1
             break
+
+    def checkThreshold(self, dictEmotions):
+      for emotion in dictEmotions:
+        if dictEmotions[emotion] > EMOTION_THRESHOLD:
+          return True
+      return False
 
     def checkExceedsThreshold(self, dictEmotions):
       maxEmotion = ''
