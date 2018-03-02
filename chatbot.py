@@ -1057,17 +1057,6 @@ class Chatbot:
           reader = csv.reader(f)
           self.sentiment_stemmed = dict(reader)
 
-      else:
-        #print('Stemming sentiment lexicon.')
-        of = open('deps/sentiment_stemmed.txt', 'w')
-        for k,v in self.sentiment.iteritems():
-          k_stem = self.porter.stem(k)
-          self.sentiment_stemmed[k_stem] = v
-          line = '%s,%s' % (k_stem, v)
-          of.write(line)
-          of.write('\n')
-        of.close()
-
 
     def binarize(self):
       """Modifies the ratings matrix to make all of the ratings binary"""
