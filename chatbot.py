@@ -12,8 +12,6 @@ import os
 import random
 from operator import itemgetter
 import gzip
-with gzip.open('PorterStemmer.py.gz', 'rb') as ps:
-  PorterStemmer = ps.read()
 
 import numpy as np
 
@@ -577,7 +575,7 @@ class Chatbot:
                 results.append((title, year))
               elif converted_title_noyr.lower() == title.lower():
                 movie_found = True
-                results.append((converted_title_noyr, year))
+                results.append((title, year))
               elif movie_title.lower() == 'The Valachi Papers'.lower():
                 movie_found = True
                 results.append(('Valachi Papers,The', '1972'))
@@ -797,12 +795,13 @@ class Chatbot:
               #  self.genres_input[g] = self.genres_input.get(g, 0) - 1
 
             else:
+              self.carryover = ()
+              self.series_carryover = ()
               return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
             if self.carryover:
               self.carryover = (self.carryover[0], sentiment_counter)
               num_options = len(self.carryover[0])
-              ex_date = self.carryover[0][1][1]
 
               if misspelled_flag:
                 pass
@@ -811,6 +810,7 @@ class Chatbot:
                   response = response + "\n" + movie + " (" + yr + ")" 
                 return response + "\nWhich movie were you talking about? You can tell me the number or date!"
               else:
+                ex_date = self.carryover[0][1][1]
                 return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
             if self.series_carryover:
               self.series_carryover = (self.series_carryover[0], sentiment_counter)
@@ -1050,9 +1050,13 @@ class Chatbot:
 
       self.sentiment_stemmed = dict()
       subdirs = os.listdir('deps')
-      if 'sentiment_stemmed.txt' in subdirs:
+      if 'sentiment_stemmed.txt.gz' in subdirs:
         #print('Sentiment lexicon already stemmed...')
-        self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
+        #self.sentiment_stemmed = dict(csv.reader(open('./deps/sentiment_stemmed.txt', 'rb')))
+        with gzip.open('./deps/sentiment_stemmed.txt.gz', 'rb') as f:
+          reader = csv.reader(f)
+          self.sentiment_stemmed = dict(reader)
+
       else:
         #print('Stemming sentiment lexicon.')
         of = open('deps/sentiment_stemmed.txt', 'w')
