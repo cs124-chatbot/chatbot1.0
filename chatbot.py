@@ -31,6 +31,7 @@ CAPITALIZED_PHRASE = r'(?=([A-Z].*))'
 
 MIN_NUM_MOVIES_NEEDED = 5
 EDIT_DIST_THRESHOLD = 4
+EMOTION_THRESHOLD = 4
 # Binarize Constants
 UPPER_THRESHOLD = 3.1
 LOWER_THRESHOLD = 2.9
@@ -65,8 +66,10 @@ class Chatbot:
       self.series_carryover = ()
       self.potential_titles = []
       self.emotionDict = {}
+      self.emotion_counter = {}
+      self.listEmotions = ['joy', 'sadnesss', 'anger', 'fear', 'trust', 'disgust', 'anticipation', 'surprise']
       self.setupEmotion()
-      
+
     #############################################################################
     # 1. WARM UP REPL
     #############################################################################
@@ -119,14 +122,14 @@ class Chatbot:
     #sets up the emotion lexicon
     def setupEmotion(self):
       self.emotionDict = {}
-      #listEmotions = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
+      #self.listEmotions = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
       self.emotionDict['anger'] = ['angry', 'rage', 'annoy', 'mad', 'furious', 'enraged', 'wrathful', 'indignant', 'exasperated', 'inflamed', \
                               'enrage', 'infuriate', 'arouse', 'nettle', 'madden']
       self.emotionDict['anticipation'] = ['anticipate' , 'vigilance', 'interest', 'assume', 'await', 'count on', 'forecast', 'foresee', 'prepare', 'conjecture', 'divine', 'figure' , 'prognosticate' , 'prophecy', 'wait','look for', 'foretaste', 'prevision']
       self.emotionDict['disgust'] = ['disgust', 'antipathy', 'dislike', 'distaste', 'hatred', 'loathing', 'revulsion', 'sickness', 'repugnance', 'nausea', 'detestation', 'yuck' , 'yikes']
       self.emotionDict['fear'] = ['fear', 'apprehension', 'fright', 'dread', 'terror', 'alarm', 'dismay', 'anxiety', 'scare', 'awe', 'horror', 'panic', 'apprehension', 'afraid', 'frightened', 'alarmed', 'terrified', 'panicked', 'fearful', \
       'unnerved', 'insecure', 'timid', 'shy', 'skittish', 'jumpy', 'disquieted', 'worried', 'vexed', 'troubled', 'disturbed', 'horrified', 'terrorized', 'shocked', 'petrified', 'haunted', 'timorous', 'shrinking', 'tremulous', 'stupefied', 'paralyzed', 'stunned', 'apprehensive']
-      self.emotionDict['joy'] = ['joy', 'serenity', 'pleased', 'contented', 'satisfied', 'delighted', 'elated', 'joyful', 'cheerful', 'ecstatic', 'jubilant', 'gay', 'tickled', 'gratified', 'glad', 'blissful', 'overjoyed', 'appreciate', 'delight in', \
+      self.emotionDict['joy'] = ['joy', 'happy', 'serenity', 'pleased', 'contented', 'satisfied', 'delighted', 'elated', 'joyful', 'cheerful', 'ecstatic', 'jubilant', 'gay', 'tickled', 'gratified', 'glad', 'blissful', 'overjoyed', 'appreciate', 'delight in', \
       'pleased', 'indulge', 'luxuriate', 'bask', 'relish', 'devour', 'savor']
       self.emotionDict['sadness'] = ['sad', 'grief', 'miserable', 'uncomfortable', 'wretched', 'heart-broken', 'unfortunate', 'poor', 'downhearted', 'sorrowful', 'depressed', 'dejected', 'melancholy', 'glum', 'gloomy', 'dismal', 'discouraged', 'unhappy']
       self.emotionDict['surprise'] = ['surprise', 'distraction', 'amaze', 'astonish', 'awe', 'bewilderment', 'consternation', 'curiosity', 'jolt', 'miracle','shock', 'wonder', 'eureka', 'marvel', 'wonderment', 'astoundment', 'unexpected', 'unforseen', 'thunderbolt']
@@ -241,7 +244,7 @@ class Chatbot:
       #############################################################################
       if self.is_turbo == True:
         # Old response = 'processed %s in creative mode!!' % input
-
+        print self.emotion_counter
         #############################################################################
         # Find movie(s) mentioned by user
         #############################################################################
@@ -403,8 +406,10 @@ class Chatbot:
             if len(self.potential_titles) > 0:
               self.potential_titles.sort(key=lambda t: len(t[0]), reverse=True)
               readable_title = self.potential_titles[0][0]
+              movie_title = self.potential_titles[0][0]
               input_movie_removed = self.potential_titles[0][2]
               tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
+              #self.movies_count += 1
               sentiment = 'liked'
               sentiment_counter = 0
               prev_word = ''
@@ -420,6 +425,8 @@ class Chatbot:
                 t_stem = self.porter.stem(t)
                 if t.strip() in ['but', ',but', ', but']:
                   sentiment_counter = 0
+
+                self.incrementEmotionCounter(negation_flag, t_stem)
 
                 if t in self.sentiment:
                   if self.sentiment[t] == 'pos':
@@ -457,6 +464,18 @@ class Chatbot:
               else:
                 return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
+            #   if self.carryover:
+            #     self.carryover = (self.carryover[0], sentiment_counter)
+            #     num_options = len(self.carryover[0])
+            #     ex_date = self.carryover[0][1][1]
+            #     return "Woah! Hold the phone! Looks like there are " + str(num_options) + " movies called " + movie_title + ". Which one are you talking about? You can tell me the year the movie was released or let me know which number it was chronologically. For example, if you were talking about the second movie called " + movie_title + ", which was released in " + ex_date + ", just tell me 2 or " + ex_date + "."
+            #   if self.series_carryover:
+            #     self.series_carryover = (self.series_carryover[0], sentiment_counter)
+            #     response = "It looks like " + movie_title + " is part of a series of movies. Here are all the movies I found in the series:"
+            #     for movie, yr in self.series_carryover[0]:
+            #       response = response + "\n" + movie + " (" + yr + ")"
+            #     return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
+
               like_genre = ''
               dislike_genre = ''
               for genre, count in self.genres_input.iteritems():
@@ -471,9 +490,18 @@ class Chatbot:
                 print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
 
               response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
+
+              if sentiment_counter == 0:
+                self.movie_inputs[movie_title] = 1.0
+              else:
+                self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
             else:
-              self.bad_input_count += 1
-              response = "Sorry. Didn't quite get that. Tell me about a movie that you've seen."
+              self.calcEmotion(input)
+              userEmotion = self.checkExceedsThreshold(self.emotion_counter)
+              if userEmotion != '':
+                response = 'I am feeling some sense of ' + userEmotion
+              else:
+                response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
           #############################################################################
           # User keeps on putting in no-quote inputs
@@ -583,7 +611,7 @@ class Chatbot:
                 series_alt_matches = re.findall(series_title_regex, self.reverse_convert_article(title))
                 if len(series_matches) >= 1 or len(series_alt_matches) >= 1:
                   series_results.append((title, year))
-              
+
               alternate_title = '(a.k.a. ' + movie_title.lower() + ')'
               paren_title = '(' + movie_title.lower() + ')'
               converted_paren_title = '(' + self.convert_article(movie_title).lower() + ')'
@@ -606,7 +634,7 @@ class Chatbot:
                 movie_found = True
                 movie_title = title
                 results.append((title, year))
-            
+
             if len(series_results) > 1:
               full_results = sorted(results + list(set(series_results) - set(results)), key=itemgetter(1))
               movie_found = True
@@ -684,8 +712,6 @@ class Chatbot:
             #self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
-            emotion_counter = {}
-            listEmotions = ['joy', 'sadnesss', 'anger', 'fear', 'trust', 'disgust', 'anticipation', 'surprise']
             prev_word = ''
             curr_word = ''
             negation_flag = False
@@ -700,28 +726,8 @@ class Chatbot:
               if t.strip() in ['but', ',but', ', but']:
                 sentiment_counter = 0
 
-              for emotion, synList in self.emotionDict.iteritems():
-                if negation_flag:
-                  if t_stem in synList:
-                    emotionOpp = ''
-                    indexEmotion = listEmotions.index(emotion)
-                    if indexEmotion % 2 == 0:
-                      emotionOpp = listEmotions[indexEmotion + 1]
-                    else:
-                      emotionOpp = listEmotions[indexEmotion - 1]
-                    if emotion not in emotion_counter:
-                      emotion_counter[emotionOpp] = 1
-                    else:
-                      emotion_counter[emotionOpp] += 1
-                    break
-                else:
-                  if t_stem in synList:
-                    if emotion not in emotion_counter:
-                      emotion_counter[emotion] = 1
-                    else:
-                      emotion_counter[emotion] += 1
-                    break
-              print emotion_counter
+              self.incrementEmotionCounter(negation_flag, t_stem)
+
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -790,7 +796,12 @@ class Chatbot:
             else:
               self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
           else:
-            response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+            self.calcEmotion(input)  
+            userEmotion = self.checkExceedsThreshold(self.emotion_counter)
+            if userEmotion != '':
+              response = 'I am feeling some sense of ' + userEmotion
+            else:
+              response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
       # -----------------------------------------
       # STANDARD MODE
@@ -896,6 +907,8 @@ class Chatbot:
               if t.strip() in ['but', ',but', ', but']:
                 sentiment_counter = 0
 
+              self.incrementEmotionCounter(negation_flag, t_stem)
+
               if t in self.sentiment:
                 if self.sentiment[t] == 'pos':
                   if negation_flag:
@@ -935,7 +948,12 @@ class Chatbot:
             else:
               self.movie_inputs[movie_title] = (float(sentiment_counter / abs(sentiment_counter)))
           else:
-            response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
+            self.calcEmotion(input)
+            userEmotion = self.checkExceedsThreshold(self.emotion_counter)
+            if userEmotion != '':
+              response = 'I am feeling some sense of ' + userEmotion
+            else:
+              response = 'Sorry, I don\'t recognize that movie. How about we try another movie?'
 
       # print self.movie_inputs
       # print self.recommend_flag
@@ -945,6 +963,54 @@ class Chatbot:
       #############################################################################
 
       return response
+
+    def calcEmotion(self, userInput):
+      tokens = userInput.split(' ') #remove movie title before tokenizing
+      prev_word = ''
+      curr_word = ''
+      negation_flag = False
+
+      for t in tokens:
+        prev_word = curr_word
+        curr_word = t
+        if prev_word in self.negation_lexicon:
+          negation_flag = True
+        t_stem = self.porter.stem(t)
+        self.incrementEmotionCounter(negation_flag, t_stem)
+
+    def incrementEmotionCounter(self, negation_flag, t_stem):
+      for emotion, synList in self.emotionDict.iteritems():
+        if negation_flag:
+          if t_stem in synList:
+            emotionOpp = ''
+            indexEmotion = self.listEmotions.index(emotion)
+            if indexEmotion % 2 == 0:
+              emotionOpp = self.listEmotions[indexEmotion + 1]
+            else:
+              emotionOpp = self.listEmotions[indexEmotion - 1]
+            if emotion not in self.emotion_counter:
+              self.emotion_counter[emotionOpp] = 1
+            else:
+              self.emotion_counter[emotionOpp] += 1
+            break
+        else:
+          if t_stem in synList:
+            if emotion not in self.emotion_counter:
+              self.emotion_counter[emotion] = 1
+            else:
+              self.emotion_counter[emotion] += 1
+            break
+
+    def checkExceedsThreshold(self, dictEmotions):
+      maxEmotion = ''
+      for emotion in dictEmotions:
+        tempEmotion = emotion
+        if dictEmotions[emotion] > EMOTION_THRESHOLD:
+          if maxEmotion not in dictEmotions or dictEmotions[tempEmotion] > dictEmotions[maxEmotion]:
+              maxEmotion = tempEmotion
+      if maxEmotion != '':
+        dictEmotions[maxEmotion] = EMOTION_THRESHOLD - 1
+      return maxEmotion
 
     def isMinWordDistance(self, title1, title2):
       title1List = title1.split()
