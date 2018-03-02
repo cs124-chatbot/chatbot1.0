@@ -447,18 +447,6 @@ class Chatbot:
               else:
                 return 'Sorry, didn\'t quite get whether you liked \"' + readable_title + '\". Can you elaborate on what you thought of \"' + movie_title + '\"?'
 
-              # like_genre = ''
-              # dislike_genre = ''
-              # for genre, count in self.genres_input.iteritems():
-              #   if count > 2:
-              #     like_genre = genre
-              #   if count < -2:
-              #     dislike_genre = genre
-
-              # if len(like_genre) > 0:
-              #   print("Wow! You seem to really like movies in the " + like_genre + " genre!")
-              # if len(dislike_genre) > 0:
-              #   print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
 
               response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
 
@@ -654,6 +642,7 @@ class Chatbot:
               if self.isMinWordDistance(lower_title, movie_title.lower()): 
                 movie_found = True
                 movie_title = title
+                readable_title = movie_title
                 break
 
               posTitles = re.findall(YEAR_REGEX, lower_title) #hacky regex to get just titles
@@ -662,29 +651,37 @@ class Chatbot:
                 if self.isMinWordDistance(posTitle, alternate_title): 
                   movie_found = True
                   movie_title = title
+                  readable_title = movie_title
                 elif self.isMinWordDistance(posTitle, paren_title): 
                   movie_found = True
                   movie_title = title
+                  readable_title = movie_title
                 elif self.isMinWordDistance(posTitle, converted_paren_title): 
                   movie_found = True
                   movie_title = title
+                  readable_title = movie_title
                 elif self.isMinWordDistance(posTitle, converted_alt_title): 
                   movie_found = True
                   movie_title = title
+                  readable_title = movie_title
 
               main_title = '(' + main_title + ')'
               if self.isMinWordDistance(main_title, alternate_title):
                 movie_found = True
                 movie_title = title
+                readable_title = movie_title
               elif self.isMinWordDistance(main_title, paren_title):
                 movie_found = True
                 movie_title = title
+                readable_title = movie_title
               elif self.isMinWordDistance(main_title, converted_paren_title):
                 movie_found = True
                 movie_title = title
+                readable_title = movie_title
               elif self.isMinWordDistance(main_title, converted_alt_title):
                 movie_found = True
                 movie_title = title
+                readable_title = movie_title
 
               if alternate_title in lower_title or converted_alt_title in lower_title:
                 movie_found = True
@@ -699,7 +696,6 @@ class Chatbot:
           if movie_found:
 
             tokens = input_movie_removed.split(' ') #remove movie title before tokenizing
-            #self.movies_count += 1
             sentiment = 'liked'
             sentiment_counter = 0
             prev_word = ''
@@ -770,20 +766,16 @@ class Chatbot:
                 response = response + "\n" + movie + " (" + yr + ")"
               return response + "\nWhich movie in the series were you talking about? You can tell me the number, date, or subtitle!"
 
-            # like_genre = ''
-            # dislike_genre = ''
-            # for genre, count in self.genres_input.iteritems():
-            #   if count > 2:
-            #     like_genre = genre
-            #   if count < -2:
-            #     dislike_genre = genre
+            response = 'So you ' + sentiment + ' \"' + readable_title + '\". '
 
-            # if len(like_genre) > 0:
-            #   print("Wow! You seem to really like movies in the " + like_genre + " genre!")
-            # if len(dislike_genre) > 0:
-            #   print("Interesting. You seem to really dislike movies in the " + dislike_genre + " genre.")
-
-            response = 'So you ' + sentiment + ' \"' + readable_title + '\". Got it. How about another movie?'
+            potential_additions = [
+              'Got it. How about another movie?',
+              'I\'m learning so much, but I want to learn more! What other movies have you seen?',
+              'Really? That\'s interesting. . . I don\'t know if I agree, but then again I am more of a recommender than a critic. Let\'s keep going - tell me about more movies!',
+              'I\'ll take that into consideration when I recommend a movie. That being said, I want to hear about more movies you\'ve liked or disliked.',
+              'Cool! I\'m having fun! How about another movie you\'ve seen?'
+            ]
+            response = response + potential_additions[random.randint(0, len(potential_additions) - 1)]
 
             if sentiment_counter == 0:
               self.movie_inputs[movie_title] = 1.0
