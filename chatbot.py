@@ -11,6 +11,9 @@ import re
 import os
 import random
 from operator import itemgetter
+import gzip
+with gzip.open('PorterStemmer.py.gz', 'rb') as ps:
+  PorterStemmer = ps.read()
 
 import numpy as np
 
